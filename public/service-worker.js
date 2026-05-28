@@ -1,4 +1,4 @@
-const CACHE_NAME = 'invitely-shell-v1';
+const CACHE_NAME = 'invitely-shell-v2';
 const SHELL_ASSETS = ['/', '/events/invitely-launch-night', '/manifest.webmanifest', '/pwa-icon.svg'];
 
 self.addEventListener('install', (event) => {
