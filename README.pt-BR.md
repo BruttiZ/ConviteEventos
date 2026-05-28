@@ -74,6 +74,7 @@ docker compose config --quiet
 docker compose logs -f app
 docker compose logs -f queue
 docker compose exec app php artisan route:list
+docker compose exec app php artisan route:list --path=api
 docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M
@@ -82,6 +83,8 @@ docker compose exec node npm run format:check
 docker compose exec node npm run typecheck
 docker compose exec node npm run build
 ```
+
+A especificação inicial da API está em `docs/api/openapi.yaml` e pode ser aberta em qualquer visualizador Swagger/OpenAPI.
 
 Para recriar o banco do zero, apagando dados locais:
 
