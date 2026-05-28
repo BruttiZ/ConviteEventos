@@ -17,6 +17,7 @@ Data is stored in PostgreSQL. Redis is used for cache, sessions, and queues. The
 | `nginx`    | Application web server      | `http://localhost:8080`                               |
 | `app`      | Laravel / PHP-FPM           | internal, port `9000`                                 |
 | `queue`    | Laravel queue worker        | internal                                              |
+| `node`     | Vite, build, and JS tooling | `http://localhost:5173`                               |
 | `postgres` | Database                    | `localhost:5432`                                      |
 | `redis`    | Cache, sessions, and queues | `localhost:6379`                                      |
 | `mailpit`  | Local email inbox           | `http://localhost:8025`                               |
@@ -25,7 +26,7 @@ Data is stored in PostgreSQL. Redis is used for cache, sessions, and queues. The
 ## Requirements
 
 - Docker Desktop or Docker Engine with Docker Compose.
-- Free ports: `8080`, `5432`, `6379`, `8025`, `9000`, and `9001`.
+- Free ports: `8080`, `5173`, `5432`, `6379`, `8025`, `9000`, and `9001`.
 - Internet access during the first build to download images and dependencies.
 
 If a port is already in use, change the values in `.env`, for example `APP_PORT=8081` or `POSTGRES_PORT=5433`.
@@ -50,13 +51,7 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
-3. Seed the database with demo data:
-
-```bash
-docker compose exec app php artisan db:seed --force
-```
-
-4. Open the application:
+3. Open the application:
 
 - App: `http://localhost:8080`
 - Demo event: `http://localhost:8080/events/invitely-launch-night`
@@ -105,7 +100,7 @@ docker compose down -v
 
 ## Frontend development outside Docker
 
-Docker already builds production assets during the image build. To work on the frontend with hot reload outside the container, use local Node.js:
+Docker already installs JS dependencies, builds assets, and keeps Vite running through the `node` service. To work on the frontend outside the container, use local Node.js:
 
 ```bash
 npm install
@@ -142,8 +137,7 @@ To recreate the whole local environment from scratch, run `docker compose down -
 This walkthrough was validated with Docker on 2026-05-28 using:
 
 ```bash
-docker compose up -d --build
-docker compose exec app php artisan db:seed --force
+docker compose up -d
 ```
 
 The following URLs were also checked: `http://localhost:8080`, `http://localhost:8080/events/invitely-launch-night`, `http://localhost:8080/admin`, `http://localhost:8025`, `http://localhost:9001`, and the API endpoint `http://localhost:8080/api/v1/events/invitely-launch-night`.
@@ -151,7 +145,10 @@ The following URLs were also checked: `http://localhost:8080`, `http://localhost
 Fixes made to keep the environment reproducible:
 
 - The entrypoint now generates `APP_KEY` only when the `.env` file does not already have one.
-- The local Docker image installs Composer development dependencies so tests, Pint, and PHPStan can run inside the container.
+- The entrypoint installs Composer dependencies when the `vendor-data` volume is empty.
+- The entrypoint runs cache clearing, `storage:link`, migrations, and seeders automatically.
+- The `node` service installs JS dependencies, builds frontend assets, and keeps Vite running.
+- The local Docker image includes Composer development dependencies so tests, Pint, and PHPStan can run inside the container.
 - `.env.example` no longer has conflicting duplicate values for `AWS_USE_PATH_STYLE_ENDPOINT`.
 
 With Docker available, the required ports free, and internet access for the first build, someone following the steps above should be able to run the project in Docker.

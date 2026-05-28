@@ -17,6 +17,7 @@ Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O c
 | `nginx`    | Servidor web da aplicação | `http://localhost:8080`                               |
 | `app`      | Laravel / PHP-FPM         | interno, porta `9000`                                 |
 | `queue`    | Worker de filas Laravel   | interno                                               |
+| `node`     | Vite, build e tooling JS  | `http://localhost:5173`                               |
 | `postgres` | Banco de dados            | `localhost:5432`                                      |
 | `redis`    | Cache, sessão e fila      | `localhost:6379`                                      |
 | `mailpit`  | Caixa de e-mail local     | `http://localhost:8025`                               |
@@ -25,7 +26,7 @@ Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O c
 ## Requisitos
 
 - Docker Desktop ou Docker Engine com Docker Compose.
-- Portas livres: `8080`, `5432`, `6379`, `8025`, `9000` e `9001`.
+- Portas livres: `8080`, `5173`, `5432`, `6379`, `8025`, `9000` e `9001`.
 - Conexão com a internet na primeira build para baixar imagens e dependências.
 
 Se alguma porta estiver ocupada, altere os valores no `.env`, por exemplo `APP_PORT=8081` ou `POSTGRES_PORT=5433`.
@@ -50,13 +51,7 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
-3. Popule o banco com dados de demonstração:
-
-```bash
-docker compose exec app php artisan db:seed --force
-```
-
-4. Abra a aplicação:
+3. Abra a aplicação:
 
 - App: `http://localhost:8080`
 - Evento demo: `http://localhost:8080/events/invitely-launch-night`
@@ -105,7 +100,7 @@ docker compose down -v
 
 ## Desenvolvimento frontend fora do Docker
 
-O Docker já gera os assets de produção durante a build. Para desenvolver o frontend com hot reload fora do container, use Node.js local:
+O Docker já instala dependências JS, gera os assets e mantém o Vite ativo no serviço `node`. Para desenvolver o frontend fora do container, use Node.js local:
 
 ```bash
 npm install
@@ -142,8 +137,7 @@ Se quiser recriar todo o ambiente local do zero, use `docker compose down -v` e 
 Este passo a passo foi validado em Docker em 28/05/2026 com:
 
 ```bash
-docker compose up -d --build
-docker compose exec app php artisan db:seed --force
+docker compose up -d
 ```
 
 Também foram verificadas as URLs `http://localhost:8080`, `http://localhost:8080/events/invitely-launch-night`, `http://localhost:8080/admin`, `http://localhost:8025`, `http://localhost:9001` e a API `http://localhost:8080/api/v1/events/invitely-launch-night`.
@@ -151,7 +145,10 @@ Também foram verificadas as URLs `http://localhost:8080`, `http://localhost:808
 Pontos corrigidos para tornar o ambiente reproduzível:
 
 - O entrypoint agora só gera `APP_KEY` quando o `.env` ainda não tem uma chave.
-- A imagem Docker local instala dependências Composer de desenvolvimento, permitindo rodar testes, Pint e PHPStan dentro do container.
+- O entrypoint instala dependências Composer quando o volume `vendor-data` está vazio.
+- O entrypoint executa limpeza de cache, `storage:link`, migrations e seeders automaticamente.
+- O serviço `node` instala dependências JS, gera o build frontend e mantém o Vite ativo.
+- A imagem Docker local inclui dependências Composer de desenvolvimento, permitindo rodar testes, Pint e PHPStan dentro do container.
 - O `.env.example` não possui mais valores duplicados para `AWS_USE_PATH_STYLE_ENDPOINT`.
 
 Com Docker funcionando, portas livres e internet disponível na primeira build, uma pessoa seguindo os passos acima deve conseguir rodar o projeto em ambiente Docker.

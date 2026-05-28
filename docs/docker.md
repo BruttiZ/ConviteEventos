@@ -29,6 +29,12 @@ O container `app` executa automaticamente:
 - migrations;
 - seeders.
 
+O serviço `node` executa automaticamente:
+
+- `npm install` quando o volume `node-modules` ainda está vazio;
+- `npm run build` para popular `public/build`;
+- `npm run dev -- --host 0.0.0.0` para manter o Vite disponível em `VITE_PORT`, por padrão `5173`.
+
 ## Comandos úteis
 
 ```bash

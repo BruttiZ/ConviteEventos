@@ -9,6 +9,7 @@ services:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
+      - node
     networks:
       - invitely
 
@@ -37,6 +38,7 @@ services:
       AWS_BUCKET: invitely
       AWS_ENDPOINT: http://minio:9000
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      RUN_SEEDERS: "true"
     volumes:
       - ./:/var/www/html
       - vendor-data:/var/www/html/vendor
@@ -56,6 +58,7 @@ services:
     command: php artisan queue:work --tries=3 --backoff=5
     environment:
       RUN_MIGRATIONS: "false"
+      RUN_SEEDERS: "false"
       DB_HOST: postgres
       DB_DATABASE: invitely
       DB_USERNAME: invitely
@@ -69,6 +72,24 @@ services:
     depends_on:
       - app
       - redis
+    networks:
+      - invitely
+
+  node:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    command: sh -lc "npm install && npm run build && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    volumes:
+      - ./:/var/www/html
+      - node-modules:/var/www/html/node_modules
+      - build-data:/var/www/html/public/build
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5173/@vite/client >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
     networks:
       - invitely
 
@@ -131,3 +152,4 @@ volumes:
   minio-data:
   vendor-data:
   build-data:
+  node-modules:
