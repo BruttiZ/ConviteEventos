@@ -1,39 +1,74 @@
-# Contributing
+# Guia de contribuição
 
-Thanks for helping improve Invitely.
+Obrigado por querer contribuir com o Invitely. A prioridade do projeto é manter uma experiência simples para quem instala, segura para quem usa e sustentável para quem mantém.
 
-## Local Setup
+## Como rodar localmente
 
 ```bash
 cp .env.example .env
-docker compose up -d --build
-docker compose exec app php artisan db:seed
+docker compose up -d
 ```
 
-## Quality Gate
+Depois acesse:
 
-Before opening a pull request, run:
+- App: `http://localhost:8080`
+- Evento demo: `http://localhost:8080/events/invitely-launch-night`
+- Admin: `http://localhost:8080/admin`
+
+## Antes de abrir um pull request
+
+Rode os comandos abaixo:
 
 ```bash
 docker compose exec app php artisan test
-docker compose exec app vendor/bin/pint
-docker compose exec app vendor/bin/phpstan analyse
+docker compose exec app vendor/bin/pint --test
+docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M
+docker compose exec node npm run typecheck
+docker compose exec node npm run build
 ```
 
-## Standards
+## Padrão de commits
 
-- Keep controllers thin.
-- Put business rules in Actions.
-- Use Form Requests for validation.
-- Protect tenant-owned resources with policies.
-- Prefer typed DTOs over passing large request arrays.
-- Add tests for product behavior, not framework internals.
+Use Conventional Commits em português brasileiro:
 
-## Pull Requests
+```text
+feat: adiciona sistema de RSVP
+fix: corrige responsividade do menu mobile
+refactor: separa lógica de convidados em action
+docs: atualiza guia de instalação Docker
+chore: configura eslint e prettier
+test: adiciona testes do fluxo público
+```
 
-Include:
+Evite mensagens genéricas como `ajustes`, `update`, `mudanças`, `teste` ou `fix`.
 
-- What changed.
-- Why it changed.
-- Screenshots for UI changes.
-- Test coverage or a note explaining the residual risk.
+## Padrões de backend
+
+- Controllers devem ser finos.
+- Regras de negócio devem viver em Actions.
+- Use Form Requests para validação.
+- Use Policies para recursos protegidos por tenant ou usuário.
+- Prefira DTOs tipados em vez de arrays grandes de request.
+- Repositórios devem esconder detalhes de persistência.
+- Testes devem cobrir comportamento de produto.
+
+## Padrões de frontend
+
+- Estruture por feature.
+- Componentes visuais não devem concentrar regra de negócio.
+- Toda tela deve ter estado de carregamento e erro quando depender de API.
+- Priorize mobile-first.
+- Garanta navegação por teclado e atributos acessíveis.
+- Use TypeScript de forma estrita.
+
+## Pull requests
+
+Inclua:
+
+- O que mudou.
+- Por que mudou.
+- Como testar.
+- Screenshots ou vídeo curto para mudanças de UI.
+- Riscos conhecidos ou dívida técnica criada.
+
+Pull requests pequenos são mais fáceis de revisar e manter.
