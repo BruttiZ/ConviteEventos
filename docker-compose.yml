@@ -101,7 +101,7 @@ services:
       - node-modules:/var/www/html/node_modules
       - build-data:/var/www/html/public/build
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5173/@vite/client >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/@vite/client >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 20
