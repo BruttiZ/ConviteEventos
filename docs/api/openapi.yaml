@@ -121,6 +121,61 @@ paths:
       responses:
         '200':
           description: Métricas do evento.
+  /admin/events/{event}/check-ins:
+    post:
+      tags: [Admin]
+      security:
+        - sanctum: []
+      summary: Registra check-in de um convidado usando o token do QR Code.
+      parameters:
+        - name: event
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invite_token]
+              properties:
+                invite_token:
+                  type: string
+                  example: demo-invite-token
+                method:
+                  type: string
+                  enum: [qr_code, manual]
+                  default: qr_code
+      responses:
+        '201':
+          description: Check-in registrado.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/events/{event}/guests/export:
+    get:
+      tags: [Admin]
+      security:
+        - sanctum: []
+      summary: Exporta convidados de um evento em CSV.
+      parameters:
+        - name: event
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Arquivo CSV de convidados.
+          content:
+            text/csv:
+              schema:
+                type: string
 components:
   securitySchemes:
     sanctum:

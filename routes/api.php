@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Api\Admin\AdminCheckInController;
 use App\Http\Controllers\Api\Admin\AdminEventController;
 use App\Http\Controllers\Api\Admin\AdminGuestController;
+use App\Http\Controllers\Api\Admin\AdminGuestExportController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Public\PublicEventController;
 use App\Http\Controllers\Api\Public\PublicRsvpController;
@@ -19,6 +21,8 @@ Route::prefix('v1')->middleware(['throttle:api', 'tenant.optional'])->group(func
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::apiResource('events', AdminEventController::class);
         Route::get('events/{event}/analytics', AdminAnalyticsController::class);
+        Route::post('events/{event}/check-ins', [AdminCheckInController::class, 'store']);
+        Route::get('events/{event}/guests/export', AdminGuestExportController::class);
         Route::apiResource('events.guests', AdminGuestController::class)->shallow();
     });
 });

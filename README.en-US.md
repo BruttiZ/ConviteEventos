@@ -19,7 +19,7 @@ Data is stored in PostgreSQL. Redis is used for cache, sessions, and queues. The
 | `nginx`    | Application web server      | `http://localhost:8080`                               |
 | `app`      | Laravel / PHP-FPM           | internal, port `9000`                                 |
 | `queue`    | Laravel queue worker        | internal                                              |
-| `node`     | Vite, build, and JS tooling | `http://localhost:5173`                               |
+| `node`     | Vite, build, and JS tooling | `http://localhost:5174`                               |
 | `postgres` | Database                    | `localhost:5432`                                      |
 | `redis`    | Cache, sessions, and queues | `localhost:6379`                                      |
 | `mailpit`  | Local email inbox           | `http://localhost:8025`                               |
@@ -28,12 +28,26 @@ Data is stored in PostgreSQL. Redis is used for cache, sessions, and queues. The
 ## Requirements
 
 - Docker Desktop or Docker Engine with Docker Compose.
-- Free ports: `8080`, `5173`, `5432`, `6379`, `8025`, `9000`, and `9001`.
+- Free ports: `8080`, `5174`, `5432`, `6379`, `8025`, `9000`, and `9001`.
 - Internet access during the first build to download images and dependencies.
 
 If a port is already in use, change the values in `.env`, for example `APP_PORT=8081` or `POSTGRES_PORT=5433`.
 
 ## Run with Docker
+
+Fastest option on PowerShell:
+
+```powershell
+.\scripts\bootstrap.ps1
+```
+
+On Linux/macOS:
+
+```bash
+sh scripts/bootstrap.sh
+```
+
+Or manually:
 
 1. Create the environment file:
 
@@ -66,6 +80,14 @@ Demo user:
 - Email: `admin@invitely.dev`
 - Password: `password`
 
+Local API token:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@invitely.dev","password":"password","device_name":"local"}'
+```
+
 ## Useful commands
 
 ```bash
@@ -74,6 +96,7 @@ docker compose config --quiet
 docker compose logs -f app
 docker compose logs -f queue
 docker compose exec app php artisan route:list
+docker compose exec app php artisan route:list --path=api
 docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M
@@ -82,6 +105,8 @@ docker compose exec node npm run format:check
 docker compose exec node npm run typecheck
 docker compose exec node npm run build
 ```
+
+The initial API specification lives at `docs/api/openapi.yaml` and can be opened in any Swagger/OpenAPI viewer.
 
 To recreate the database from scratch, deleting local data:
 

@@ -6,7 +6,7 @@ Invitely é uma plataforma open source para convites digitais, RSVP, check-in po
 
 O Nginx recebe as requisições em `http://localhost:8080` e encaminha PHP para o container `app`, que roda Laravel em PHP 8.4-FPM. O Laravel entrega a SPA React pelo Blade em `resources/views/app.blade.php`; o React assume as rotas públicas e administrativas no navegador.
 
-As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A página pública busca os dados do evento em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. O painel administrativo em `/admin` é uma interface inicial; as rotas administrativas de API existem, mas exigem autenticação via Sanctum.
+As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A página pública busca os dados do evento em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. O painel administrativo em `/admin` é uma interface inicial; as rotas administrativas de API existem, exigem autenticação via Sanctum e já cobrem eventos, convidados, analytics, check-in por token do QR Code e exportação CSV.
 
 A experiência pública foi pensada mobile-first: hero responsivo, CTA fixo no celular, RSVP com feedback visual, countdown compacto, galeria fluida e microinterações suaves.
 
