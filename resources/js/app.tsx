@@ -33,6 +33,8 @@ createRoot(rootElement).render(
                     <Route path="/register" element={<AuthPage />} />
                     <Route path="/events/:slug" element={<PublicEventPage />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
+                    <Route path="/organizador/*" element={<AdminDashboard />} />
+                    <Route path="/convidado/*" element={<AdminDashboard />} />
                 </Routes>
             </BrowserRouter>
         </QueryClientProvider>
