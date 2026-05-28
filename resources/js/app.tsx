@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AdminDashboard } from './app/features/admin/AdminDashboard';
+import { AuthPage } from './app/features/auth/AuthPage';
 import { PublicEventPage } from './app/features/public/PublicEventPage';
 
 const queryClient = new QueryClient({
@@ -28,6 +29,8 @@ createRoot(rootElement).render(
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<PublicEventPage />} />
+                    <Route path="/login" element={<AuthPage />} />
+                    <Route path="/register" element={<AuthPage />} />
                     <Route path="/events/:slug" element={<PublicEventPage />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
                 </Routes>

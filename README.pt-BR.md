@@ -1,101 +1,66 @@
 # Invitely
 
-Invitely é uma plataforma open source para convites digitais, RSVP, check-in por QR Code e páginas públicas de eventos. O projeto usa Laravel 12 no backend, React com TypeScript no frontend e um ambiente Docker com Nginx, PHP-FPM, PostgreSQL, Redis, Mailpit e MinIO.
+Invitely e uma plataforma open source para convites digitais, RSVP, check-in por QR Code e gerenciamento de eventos. O projeto usa Laravel 12 no backend, React com TypeScript no frontend e Docker com Nginx, PHP-FPM, PostgreSQL, Redis, Mailpit e MinIO.
 
 ## Como o projeto funciona
 
-O Nginx recebe as requisições em `http://localhost:8080` e encaminha PHP para o container `app`, que roda Laravel em PHP 8.4-FPM. O Laravel entrega a SPA React pelo Blade em `resources/views/app.blade.php`; o React assume as rotas públicas e administrativas no navegador.
+O Nginx recebe as requisicoes em `http://localhost:8080` e encaminha PHP para o container `app`, que roda Laravel em PHP 8.4-FPM. O Laravel entrega a SPA React pelo Blade em `resources/views/app.blade.php`; o React assume as rotas publicas, login/cadastro e dashboard no navegador.
 
-As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A página pública busca os dados do evento em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. O painel administrativo em `/admin` é uma interface inicial; as rotas administrativas de API existem, exigem autenticação via Sanctum e já cobrem eventos, convidados, analytics, check-in por token do QR Code e exportação CSV.
+As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A pagina publica busca dados em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. O fluxo de login/cadastro emite tokens Sanctum e o dashboard em `/admin` muda conforme o papel do usuario.
 
-A experiência pública foi pensada mobile-first: hero responsivo, CTA fixo no celular, RSVP com feedback visual, countdown compacto, galeria fluida e microinterações suaves.
+## Fluxo demo
 
-Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O container `queue` roda `php artisan queue:work`. Mailpit recebe e-mails de desenvolvimento. MinIO fica disponível para compatibilidade com armazenamento S3.
-
-## Serviços Docker
-
-| Serviço    | Função                    | URL/porta padrão                                      |
-| ---------- | ------------------------- | ----------------------------------------------------- |
-| `nginx`    | Servidor web da aplicação | `http://localhost:8080`                               |
-| `app`      | Laravel / PHP-FPM         | interno, porta `9000`                                 |
-| `queue`    | Worker de filas Laravel   | interno                                               |
-| `node`     | Vite, build e tooling JS  | `http://localhost:5174`                               |
-| `postgres` | Banco de dados            | `localhost:5432`                                      |
-| `redis`    | Cache, sessão e fila      | `localhost:6379`                                      |
-| `mailpit`  | Caixa de e-mail local     | `http://localhost:8025`                               |
-| `minio`    | Storage S3 local          | API `localhost:9000`, console `http://localhost:9001` |
-
-## Requisitos
-
-- Docker Desktop ou Docker Engine com Docker Compose.
-- Portas livres: `8080`, `5174`, `5432`, `6379`, `8025`, `9000` e `9001`.
-- Conexão com a internet na primeira build para baixar imagens e dependências.
-
-Se alguma porta estiver ocupada, altere os valores no `.env`, por exemplo `APP_PORT=8081` ou `POSTGRES_PORT=5433`.
-
-## Como rodar com Docker
-
-Opção mais rápida no PowerShell:
-
-```powershell
-.\scripts\bootstrap.ps1
-```
-
-No Linux/macOS:
-
-```bash
-sh scripts/bootstrap.sh
-```
-
-Ou manualmente:
-
-1. Crie o arquivo de ambiente:
-
-```bash
-cp .env.example .env
-```
-
-No PowerShell, se preferir:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-2. Suba os containers:
-
-```bash
-docker compose up -d --build
-```
-
-3. Abra a aplicação:
+Abra:
 
 - App: `http://localhost:8080`
-- Evento demo: `http://localhost:8080/events/invitely-launch-night`
-- Admin UI: `http://localhost:8080/admin`
+- Convite demo: `http://localhost:8080/events/invitely-launch-night`
+- Login / cadastro: `http://localhost:8080/login`
+- Dashboard: `http://localhost:8080/admin`
 - Mailpit: `http://localhost:8025`
 - MinIO Console: `http://localhost:9001`
 
-Usuário demo:
+Contas locais, todas com senha `password`:
 
-- E-mail: `admin@invitely.dev`
-- Senha: `password`
+| Perfil              | E-mail               | O que testa                                  |
+| ------------------- | -------------------- | -------------------------------------------- |
+| Dono do evento      | `host@invitely.dev`  | Eventos, convidados, temas, RSVP e check-in. |
+| Convidado           | `guest@invitely.dev` | Convite publico, confirmacao e QR Code.      |
+| Admin da plataforma | `admin@invitely.dev` | Visao operacional de tenants e plataforma.   |
 
-Token API local:
+## Servicos Docker
+
+| Servico    | Funcao                               | URL/porta padrao                                      |
+| ---------- | ------------------------------------ | ----------------------------------------------------- |
+| `nginx`    | Servidor web da aplicacao            | `http://localhost:8080`                               |
+| `app`      | Laravel / PHP-FPM                    | interno, porta `9000`                                 |
+| `queue`    | Worker de filas Laravel              | interno                                               |
+| `node`     | Instala dependencias JS e gera build | interno                                               |
+| `postgres` | Banco de dados                       | `localhost:5432`                                      |
+| `redis`    | Cache, sessao e filas                | `localhost:6379`                                      |
+| `mailpit`  | Caixa de e-mail local                | `http://localhost:8025`                               |
+| `minio`    | Storage S3 local                     | API `localhost:9000`, console `http://localhost:9001` |
+
+## Como rodar com Docker
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@invitely.dev","password":"password","device_name":"local"}'
+cp .env.example .env
+docker compose up -d --build
 ```
 
-## Comandos úteis
+No PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
+```
+
+O container `app` prepara o Laravel automaticamente: gera `APP_KEY` quando necessario, limpa cache, cria `storage:link`, roda migrations e seeders. O container `node` instala dependencias JS, gera `public/build` e remove `public/hot` para garantir que o Nginx sirva os assets estaticos do build.
+
+## Comandos uteis
 
 ```bash
 docker compose ps
-docker compose config --quiet
 docker compose logs -f app
-docker compose logs -f queue
-docker compose exec app php artisan route:list
 docker compose exec app php artisan route:list --path=api
 docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
@@ -106,43 +71,40 @@ docker compose exec node npm run typecheck
 docker compose exec node npm run build
 ```
 
-A especificação inicial da API está em `docs/api/openapi.yaml` e pode ser aberta em qualquer visualizador Swagger/OpenAPI.
-
-Para recriar o banco do zero, apagando dados locais:
+Para recriar o banco do zero:
 
 ```bash
 docker compose exec app php artisan migrate:fresh --seed
 ```
 
-Para parar o ambiente:
+Para parar tudo:
 
 ```bash
 docker compose down
 ```
 
-Para parar e apagar volumes, incluindo banco, Redis, MinIO, `vendor` e build gerados:
+Para parar e apagar volumes locais:
 
 ```bash
 docker compose down -v
 ```
 
-## Desenvolvimento frontend fora do Docker
+## Desenvolvimento frontend
 
-O Docker já instala dependências JS, gera os assets e mantém o Vite ativo no serviço `node`. Para desenvolver o frontend fora do container, use Node.js local:
+No fluxo Docker padrao, abra sempre `http://localhost:8080`. O navegador nao precisa acessar uma porta Vite separada. O service worker fica desabilitado em ambiente local para evitar cache antigo durante desenvolvimento.
+
+Se quiser rodar ferramentas JS:
 
 ```bash
-npm install
-npm run dev
-npm run lint
-npm run format:check
-npm run typecheck
+docker compose exec node npm run typecheck
+docker compose exec node npm run build
 ```
 
-## Padrão de commits
+## Padrao de commits
 
-O projeto usa Conventional Commits em português brasileiro. Os hooks do Husky executam `lint-staged` antes do commit e `commitlint` na mensagem.
+O projeto usa Conventional Commits em portugues brasileiro.
 
-Exemplos válidos:
+Exemplos validos:
 
 ```text
 feat: adiciona fluxo de RSVP
@@ -150,33 +112,21 @@ fix: corrige responsividade do painel admin
 docs: melhora guia Docker
 ```
 
-## Solução de problemas
+## Solucao de problemas
 
-Se `php artisan test`, `vendor/bin/pint` ou `vendor/bin/phpstan` não existirem depois de uma atualização do Dockerfile, provavelmente o volume `vendor-data` foi criado por uma versão antiga da imagem. Atualize o volume sem apagar o banco:
-
-```bash
-docker compose exec app composer install --no-interaction --prefer-dist --optimize-autoloader
-```
-
-Se quiser recriar todo o ambiente local do zero, use `docker compose down -v` e suba novamente. Esse comando apaga os volumes locais.
-
-## Validação do ambiente Docker
-
-Este passo a passo foi validado em Docker em 28/05/2026 com:
+Se a tela ficar branca, rode:
 
 ```bash
-docker compose up -d
+docker compose exec node npm run build
+docker compose restart nginx
 ```
 
-Também foram verificadas as URLs `http://localhost:8080`, `http://localhost:8080/events/invitely-launch-night`, `http://localhost:8080/admin`, `http://localhost:8025`, `http://localhost:9001` e a API `http://localhost:8080/api/v1/events/invitely-launch-night`.
+Depois abra novamente `http://localhost:8080` com reload forte no navegador.
 
-Pontos corrigidos para tornar o ambiente reproduzível:
+Se o login retornar erro de banco, confirme que o Docker esta usando PostgreSQL:
 
-- O entrypoint agora só gera `APP_KEY` quando o `.env` ainda não tem uma chave.
-- O entrypoint instala dependências Composer quando o volume `vendor-data` está vazio.
-- O entrypoint executa limpeza de cache, `storage:link`, migrations e seeders automaticamente.
-- O serviço `node` instala dependências JS, gera o build frontend e mantém o Vite ativo.
-- A imagem Docker local inclui dependências Composer de desenvolvimento, permitindo rodar testes, Pint e PHPStan dentro do container.
-- O `.env.example` não possui mais valores duplicados para `AWS_USE_PATH_STYLE_ENDPOINT`.
+```bash
+docker compose exec app php artisan tinker --execute="dump(config('database.default'));"
+```
 
-Com Docker funcionando, portas livres e internet disponível na primeira build, uma pessoa seguindo os passos acima deve conseguir rodar o projeto em ambiente Docker.
+O valor esperado no Docker e `pgsql`.

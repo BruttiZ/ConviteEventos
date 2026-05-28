@@ -12,12 +12,13 @@ servers:
     description: Ambiente local Docker
 tags:
   - name: Público
+  - name: Auth
   - name: Admin
 paths:
   /auth/login:
     post:
-      tags: [Admin]
-      summary: Emite token Sanctum para uso nas rotas administrativas.
+      tags: [Auth]
+      summary: Emite token Sanctum para uso no dashboard e na demo.
       requestBody:
         required: true
         content:
@@ -40,6 +41,41 @@ paths:
       responses:
         '200':
           description: Token emitido.
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Cria usuario demo e emite token Sanctum.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role]
+              properties:
+                name:
+                  type: string
+                  example: Novo produtor
+                email:
+                  type: string
+                  format: email
+                  example: novo@invitely.dev
+                password:
+                  type: string
+                  format: password
+                  example: password
+                role:
+                  type: string
+                  enum: [owner, guest, platform_admin]
+                  example: owner
+                device_name:
+                  type: string
+                  example: local-dev
+      responses:
+        '201':
+          description: Usuario criado e token emitido.
         '422':
           $ref: '#/components/responses/ValidationError'
   /events/{slug}:

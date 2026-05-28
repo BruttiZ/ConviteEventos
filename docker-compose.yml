@@ -27,6 +27,7 @@ services:
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
+      DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: invitely
@@ -72,6 +73,7 @@ services:
     environment:
       RUN_MIGRATIONS: "false"
       RUN_SEEDERS: "false"
+      DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_DATABASE: invitely
       DB_USERNAME: invitely

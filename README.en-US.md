@@ -6,7 +6,13 @@ Invitely is an open source platform for digital invitations, RSVP, QR Code check
 
 Nginx receives requests at `http://localhost:8080` and forwards PHP requests to the `app` container, which runs Laravel on PHP 8.4-FPM. Laravel serves the React SPA through the Blade view in `resources/views/app.blade.php`; React then handles the public and admin routes in the browser.
 
-API routes live in `routes/api.php` under the `/api/v1` prefix. The public event page fetches event data from `/api/v1/events/{slug}` and submits RSVP data to `/api/v1/events/{slug}/rsvp`. The admin page at `/admin` is an initial UI shell; admin API routes exist, but require Sanctum authentication.
+API routes live in `routes/api.php` under the `/api/v1` prefix. The public event page fetches event data from `/api/v1/events/{slug}` and submits RSVP data to `/api/v1/events/{slug}/rsvp`. The login/register flow issues Sanctum tokens, and the dashboard at `/admin` adapts to the current user role.
+
+The local demo includes three seeded roles so contributors can test the product from different perspectives:
+
+- Event owner: `host@invitely.dev` / `password`
+- Guest: `guest@invitely.dev` / `password`
+- Platform admin: `admin@invitely.dev` / `password`
 
 The public experience is mobile-first: responsive hero, sticky mobile CTA, RSVP feedback, compact countdown, fluid gallery, and subtle microinteractions.
 
@@ -71,14 +77,12 @@ docker compose up -d --build
 
 - App: `http://localhost:8080`
 - Demo event: `http://localhost:8080/events/invitely-launch-night`
-- Admin UI: `http://localhost:8080/admin`
+- Login / register: `http://localhost:8080/login`
+- Dashboard: `http://localhost:8080/admin`
 - Mailpit: `http://localhost:8025`
 - MinIO Console: `http://localhost:9001`
 
-Demo user:
-
-- Email: `admin@invitely.dev`
-- Password: `password`
+Demo users all use the password `password`: `host@invitely.dev`, `guest@invitely.dev`, and `admin@invitely.dev`.
 
 Local API token:
 
@@ -128,7 +132,7 @@ docker compose down -v
 
 ## Frontend development outside Docker
 
-Docker already installs JS dependencies, builds assets, and keeps Vite running through the `node` service. To work on the frontend outside the container, use local Node.js:
+Docker already installs JS dependencies and builds the frontend assets through the `node` service. In the default Docker flow, Nginx serves the generated build from `public/build` so the app works at `http://localhost:8080` without a separate Vite browser port. To work on the frontend outside the container, use local Node.js:
 
 ```bash
 npm install
@@ -175,7 +179,8 @@ Fixes made to keep the environment reproducible:
 - The entrypoint now generates `APP_KEY` only when the `.env` file does not already have one.
 - The entrypoint installs Composer dependencies when the `vendor-data` volume is empty.
 - The entrypoint runs cache clearing, `storage:link`, migrations, and seeders automatically.
-- The `node` service installs JS dependencies, builds frontend assets, and keeps Vite running.
+- The `node` service installs JS dependencies and builds frontend assets for Nginx.
+- The local Blade shell unregisters service workers outside production to prevent stale cached JavaScript during development.
 - The local Docker image includes Composer development dependencies so tests, Pint, and PHPStan can run inside the container.
 - `.env.example` no longer has conflicting duplicate values for `AWS_USE_PATH_STYLE_ENDPOINT`.
 

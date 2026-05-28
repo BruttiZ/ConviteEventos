@@ -17,11 +17,14 @@ It is built with Laravel, React, TypeScript, PostgreSQL, Redis, TailwindCSS, and
 Screenshots and a short demo GIF will live in `docs/assets` as the UI stabilizes. The current demo can be opened locally after the Docker setup:
 
 - Public event: `http://localhost:8080/events/invitely-launch-night`
-- Admin shell: `http://localhost:8080/admin`
+- Login / register: `http://localhost:8080/login`
+- Interactive dashboard: `http://localhost:8080/admin`
 
 ## Highlights
 
 - Public event pages with countdown, gallery, map area, Spotify playlist, QR Code, and RSVP.
+- Login and register screens with demo roles for event owner, guest, and platform admin.
+- Interactive dashboard demo with role-aware navigation, check-in simulation, templates, guests, and platform view.
 - Laravel API structured around Actions, DTOs, repositories, form requests, policies, and resources.
 - Multi-tenant data model prepared for SaaS growth.
 - Docker stack with Nginx, PHP 8.4-FPM, PostgreSQL, Redis, Mailpit, MinIO, and Vite.
@@ -49,14 +52,18 @@ Open:
 
 - App: `http://localhost:8080`
 - Demo event: `http://localhost:8080/events/invitely-launch-night`
-- Admin UI shell: `http://localhost:8080/admin`
+- Login / register: `http://localhost:8080/login`
+- Dashboard: `http://localhost:8080/admin`
 - Mailpit: `http://localhost:8025`
 - MinIO Console: `http://localhost:9001`
 
-Demo admin user:
+Demo users:
 
-- Email: `admin@invitely.dev`
-- Password: `password`
+| Profile        | Email                | Password   | Purpose                                                |
+| -------------- | -------------------- | ---------- | ------------------------------------------------------ |
+| Event owner    | `host@invitely.dev`  | `password` | Manage events, guests, themes, RSVP, and check-in.     |
+| Guest          | `guest@invitely.dev` | `password` | Open the invitation, RSVP, and simulate QR Code usage. |
+| Platform admin | `admin@invitely.dev` | `password` | Inspect platform-level operation and tenants.          |
 
 ## Development Commands
 
@@ -102,9 +109,18 @@ tests/
   Feature/                Product behavior tests
 ```
 
+## Current Demo Flow
+
+1. Open `http://localhost:8080/login`.
+2. Choose one of the three demo profiles.
+3. Sign in with password `password`.
+4. Explore the dashboard tabs and actions.
+5. Open the public event from the dashboard or directly at `/events/invitely-launch-night`.
+
+In local Docker, the React app is served from the generated Vite build through Nginx. The service worker is disabled locally to avoid stale JavaScript while developing.
+
 ## Roadmap
 
-- Complete Sanctum authentication screens and session flow.
 - Event and guest CRUD in the admin UI.
 - CSV import/export for guests.
 - Image upload pipeline backed by MinIO.

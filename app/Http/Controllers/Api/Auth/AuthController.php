@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +14,30 @@ use Illuminate\Validation\ValidationException;
 
 final class AuthController extends Controller
 {
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $tenant = Tenant::query()->firstOrCreate(
+            ['slug' => 'demo'],
+            [
+                'name' => 'Invitely Demo',
+                'plan' => 'community',
+                'settings' => ['locale' => 'pt_BR', 'timezone' => 'America/Sao_Paulo'],
+            ],
+        );
+
+        $user = User::query()->create([
+            'tenant_id' => $request->validated('role') === 'platform_admin' ? null : $tenant->id,
+            'name' => $request->validated('name'),
+            'email' => $request->validated('email'),
+            'password' => Hash::make((string) $request->validated('password')),
+            'role' => $request->validated('role'),
+        ]);
+
+        return response()->json([
+            'data' => $this->issueToken($user, (string) ($request->validated('device_name') ?: 'web')),
+        ], 201);
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::query()->where('email', $request->string('email'))->first();
@@ -22,24 +48,8 @@ final class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken(
-            name: (string) ($request->validated('device_name') ?: 'api'),
-            abilities: ['admin'],
-            expiresAt: now()->addDays(30),
-        );
-
         return response()->json([
-            'data' => [
-                'token' => $token->plainTextToken,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'tenant_id' => $user->tenant_id,
-                ],
-            ],
+            'data' => $this->issueToken($user, (string) ($request->validated('device_name') ?: 'web')),
         ]);
     }
 
@@ -53,5 +63,35 @@ final class AuthController extends Controller
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Sessao encerrada.']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function issueToken(User $user, string $deviceName): array
+    {
+        $abilities = match ($user->role) {
+            'platform_admin' => ['platform:admin'],
+            'guest' => ['event:guest'],
+            default => ['tenant:owner'],
+        };
+
+        $token = $user->createToken(
+            name: $deviceName,
+            abilities: $abilities,
+            expiresAt: now()->addDays(30),
+        );
+
+        return [
+            'token' => $token->plainTextToken,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'tenant_id' => $user->tenant_id,
+            ],
+        ];
     }
 }

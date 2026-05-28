@@ -2,39 +2,58 @@
 
 O frontend usa React, TypeScript, Vite, TailwindCSS e Framer Motion.
 
-## Organização
+## Organizacao
 
 ```text
 resources/js/
-  app/features/          Funcionalidades por área de produto
-  components/ui/         Componentes reutilizáveis de interface
-  lib/                   Utilitários compartilhados
+  app/auth/              Sessao local, usuario autenticado e papeis
+  app/features/auth/     Login, cadastro e atalhos de demo
+  app/features/public/   Convite publico, RSVP, QR Code e compartilhamento
+  app/features/admin/    Dashboard interativo por perfil
+  components/ui/         Componentes reutilizaveis de interface
+  lib/                   Utilitarios compartilhados
 ```
 
-## Princípios
+## Rotas principais
+
+- `/login`: tela de login/cadastro com tres perfis de teste.
+- `/events/invitely-launch-night`: convite publico com RSVP, compartilhamento, tema e QR Code.
+- `/admin`: dashboard interativo que muda a navegacao conforme o papel do usuario.
+
+## Contas demo
+
+Todas usam a senha `password`.
+
+| Perfil              | E-mail               |
+| ------------------- | -------------------- |
+| Dono do evento      | `host@invitely.dev`  |
+| Convidado           | `guest@invitely.dev` |
+| Admin da plataforma | `admin@invitely.dev` |
+
+## Principios
 
 - Mobile-first.
-- Estados explícitos de loading, erro e vazio.
+- Estados explicitos de loading, erro e sucesso.
 - Componentes visuais pequenos.
-- Lógica de API em hooks ou módulos de feature.
-- Acessibilidade desde o início.
+- Logica de API isolada por feature.
+- Acessibilidade desde o inicio.
 - Tipagem estrita.
 
-## Experiência pública mobile
+## Experiencia publica mobile
 
-A landing pública prioriza celulares:
+A landing publica prioriza celulares:
 
-- hero com título legível em telas pequenas;
-- CTA primário visível no primeiro viewport;
-- navegação fixa inferior para confirmação e compartilhamento;
-- áreas tocáveis com altura estável;
+- hero com titulo legivel em telas pequenas;
+- CTA primario visivel no primeiro viewport;
+- navegacao fixa inferior para confirmacao e compartilhamento;
+- areas tocaveis com altura estavel;
 - feedback visual para sucesso, erro e envio de RSVP;
-- galerias e cards fluidos entre celular, tablet e desktop.
+- galerias e cards fluidos entre celular, tablet e desktop;
+- service worker desabilitado em ambiente local para evitar cache antigo.
 
 ## Comandos
 
 ```bash
-docker compose exec node npm run dev
 docker compose exec node npm run typecheck
 docker compose exec node npm run lint
 docker compose exec node npm run format:check
@@ -43,7 +62,7 @@ docker compose exec node npm run build
 
 ## Guardrails
 
-- ESLint valida TypeScript/TSX com regras tipadas.
-- Prettier mantém CSS, React, JSON e Markdown consistentes.
-- `lint-staged` roda correções nos arquivos alterados antes do commit.
-- `commitlint` bloqueia mensagens fora do padrão Conventional Commits.
+- ESLint valida TypeScript/TSX.
+- Prettier mantem CSS, React, JSON e Markdown consistentes.
+- `lint-staged` roda correcoes nos arquivos alterados antes do commit.
+- `commitlint` bloqueia mensagens fora do padrao Conventional Commits.

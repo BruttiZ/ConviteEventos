@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { getStoredSession } from '../../auth/session';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -104,6 +105,8 @@ export function PublicEventPage() {
     const { slug = 'invitely-launch-night' } = useParams();
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [form, setForm] = useState({ invite_token: 'demo-invite-token', companions: 0, message: '' });
+    const [notice, setNotice] = useState('Convite carregado. Voce ja pode confirmar, compartilhar e testar o QR Code.');
+    const session = getStoredSession();
 
     const eventQuery = useQuery({
         queryKey: ['public-event', slug],
@@ -151,11 +154,13 @@ export function PublicEventPage() {
     function share() {
         if (typeof navigator.share === 'function') {
             void navigator.share({ title: event.name, url: window.location.href });
+            setNotice('Compartilhamento aberto pelo navegador.');
 
             return;
         }
 
         void navigator.clipboard.writeText(window.location.href);
+        setNotice('Link do convite copiado para a area de transferencia.');
     }
 
     return (
@@ -184,6 +189,7 @@ export function PublicEventPage() {
                             size="icon"
                             onClick={() => {
                                 setTheme(isDark ? 'light' : 'dark');
+                                setNotice(`Tema ${isDark ? 'claro' : 'escuro'} aplicado.`);
                             }}
                             aria-label="Alternar tema"
                         >
@@ -191,6 +197,9 @@ export function PublicEventPage() {
                         </Button>
                         <Button variant="secondary" size="icon" onClick={share} aria-label="Compartilhar">
                             <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button asChild variant="secondary" className="hidden sm:inline-flex">
+                            <Link to={session ? '/admin' : '/login'}>{session ? 'Painel' : 'Entrar'}</Link>
                         </Button>
                     </div>
                 </header>
@@ -236,6 +245,9 @@ export function PublicEventPage() {
                                 Ver detalhes
                             </a>
                         </div>
+                        <p className="mt-4 max-w-xl rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-100 backdrop-blur">
+                            {notice}
+                        </p>
                     </motion.div>
 
                     <Card id="rsvp" className="border-white/15 bg-white/10 text-white backdrop-blur-xl">
@@ -413,7 +425,13 @@ export function PublicEventPage() {
 
             <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                 <span>Open source SaaS-ready invitations.</span>
-                <Button variant="ghost" size="sm">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        setNotice('Exportacao CSV simulada para a demo.');
+                    }}
+                >
                     <Send className="h-4 w-4" /> Exportar CSV
                 </Button>
             </footer>

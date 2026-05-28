@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware(['throttle:api', 'tenant.optional'])->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:login');
 
     Route::get('/events/{slug}', [PublicEventController::class, 'show']);
     Route::post('/events/{slug}/rsvp', [PublicRsvpController::class, 'store'])->middleware('throttle:rsvp');

@@ -23,10 +23,20 @@
     <body>
         <div id="root"></div>
         <script>
-            if ('serviceWorker' in navigator) {
+            if ('serviceWorker' in navigator && {{ app()->environment('production') ? 'true' : 'false' }}) {
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('/service-worker.js').catch(() => {});
                 });
+            } else if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations()
+                    .then((registrations) => registrations.forEach((registration) => registration.unregister()))
+                    .catch(() => {});
+
+                if ('caches' in window) {
+                    caches.keys()
+                        .then((keys) => keys.forEach((key) => caches.delete(key)))
+                        .catch(() => {});
+                }
             }
         </script>
     </body>

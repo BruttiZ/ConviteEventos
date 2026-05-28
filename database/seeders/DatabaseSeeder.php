@@ -29,15 +29,21 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        User::query()->firstOrCreate(
-            ['email' => 'admin@invitely.dev'],
-            [
-                'tenant_id' => $tenant->id,
-                'name' => 'Invitely Admin',
-                'password' => Hash::make('password'),
-                'role' => 'owner',
-            ],
-        );
+        collect([
+            ['email' => 'host@invitely.dev', 'name' => 'Marina Host', 'role' => 'owner', 'tenant_id' => $tenant->id],
+            ['email' => 'guest@invitely.dev', 'name' => 'Lucas Convidado', 'role' => 'guest', 'tenant_id' => $tenant->id],
+            ['email' => 'admin@invitely.dev', 'name' => 'Invitely Admin', 'role' => 'platform_admin', 'tenant_id' => null],
+        ])->each(function (array $user): void {
+            User::query()->updateOrCreate(
+                ['email' => $user['email']],
+                [
+                    'tenant_id' => $user['tenant_id'],
+                    'name' => $user['name'],
+                    'password' => Hash::make('password'),
+                    'role' => $user['role'],
+                ],
+            );
+        });
 
         EventTemplate::query()->firstOrCreate(
             ['tenant_id' => $tenant->id, 'slug' => 'linear-premium'],
