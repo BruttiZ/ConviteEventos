@@ -21,6 +21,8 @@
 /storage/*.key
 /storage/pail
 /vendor
+/routes/routes
+/bootstrap/bootstrap
 Homestead.json
 Homestead.yaml
 Thumbs.db
