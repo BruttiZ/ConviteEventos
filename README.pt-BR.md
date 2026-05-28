@@ -68,6 +68,7 @@ Usuário demo:
 
 ```bash
 docker compose ps
+docker compose config --quiet
 docker compose logs -f app
 docker compose logs -f queue
 docker compose exec app php artisan route:list

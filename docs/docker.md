@@ -39,6 +39,7 @@ O serviço `node` executa automaticamente:
 
 ```bash
 docker compose ps
+docker compose config --quiet
 docker compose logs -f app
 docker compose exec app php artisan migrate:fresh --seed
 docker compose exec app php artisan test
