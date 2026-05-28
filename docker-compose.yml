@@ -93,15 +93,13 @@ services:
   node:
     image: node:22-alpine
     working_dir: /var/www/html
-    command: sh -lc "npm install && npm run build && npm run dev -- --host 0.0.0.0"
-    ports:
-      - "${VITE_PORT:-5174}:5173"
+    command: sh -lc "npm install && npm run build && rm -f public/hot && tail -f /dev/null"
     volumes:
       - ./:/var/www/html
       - node-modules:/var/www/html/node_modules
       - build-data:/var/www/html/public/build
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/@vite/client >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "test -f public/build/manifest.json || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 20
