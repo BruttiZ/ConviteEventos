@@ -9,7 +9,8 @@
 @source '../**/*.tsx';
 
 @theme {
-    --font-sans: 'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans:
+        'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
@@ -47,6 +48,9 @@ body {
     font-family: var(--font-sans);
 }
 
-button, input, textarea, select {
+button,
+input,
+textarea,
+select {
     letter-spacing: 0;
 }

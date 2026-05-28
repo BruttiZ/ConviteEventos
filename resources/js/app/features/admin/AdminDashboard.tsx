@@ -1,5 +1,15 @@
 import { motion } from 'framer-motion';
-import { BarChart3, CalendarPlus, Download, ImagePlus, MailCheck, QrCode, Search, Settings2, UsersRound } from 'lucide-react';
+import {
+    BarChart3,
+    CalendarPlus,
+    Download,
+    ImagePlus,
+    MailCheck,
+    QrCode,
+    Search,
+    Settings2,
+    UsersRound,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,9 +55,13 @@ export function AdminDashboard() {
                             const Icon = item.icon;
 
                             return (
-                            <Button key={item.label} variant={item.label === 'Overview' ? 'secondary' : 'ghost'} className="justify-start">
-                                <Icon className="h-4 w-4" /> {item.label}
-                            </Button>
+                                <Button
+                                    key={item.label}
+                                    variant={item.label === 'Overview' ? 'secondary' : 'ghost'}
+                                    className="justify-start"
+                                >
+                                    <Icon className="h-4 w-4" /> {item.label}
+                                </Button>
                             );
                         })}
                     </nav>
@@ -58,17 +72,28 @@ export function AdminDashboard() {
                         <div>
                             <Badge>Multi-tenant SaaS</Badge>
                             <h1 className="mt-3 text-3xl font-bold tracking-normal">Painel operacional</h1>
-                            <p className="mt-1 text-sm text-slate-500">Eventos, RSVP, analytics e check-in em uma experiencia unica.</p>
+                            <p className="mt-1 text-sm text-slate-500">
+                                Eventos, RSVP, analytics e check-in em uma experiencia unica.
+                            </p>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="secondary"><Download className="h-4 w-4" /> CSV</Button>
-                            <Button><CalendarPlus className="h-4 w-4" /> Novo evento</Button>
+                            <Button variant="secondary">
+                                <Download className="h-4 w-4" /> CSV
+                            </Button>
+                            <Button>
+                                <CalendarPlus className="h-4 w-4" /> Novo evento
+                            </Button>
                         </div>
                     </div>
 
                     <div className="mt-6 grid gap-4 md:grid-cols-4">
                         {stats.map((item, index) => (
-                            <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                            <motion.div
+                                key={item.label}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
                                 <Card className="dark:border-slate-800 dark:bg-slate-900">
                                     <CardContent className="pt-5">
                                         <item.icon className="h-5 w-5 text-sky-500" />
@@ -104,9 +129,14 @@ export function AdminDashboard() {
                                         </thead>
                                         <tbody>
                                             {events.map((event) => (
-                                                <tr key={event.name} className="border-t border-slate-200 dark:border-slate-800">
+                                                <tr
+                                                    key={event.name}
+                                                    className="border-t border-slate-200 dark:border-slate-800"
+                                                >
                                                     <td className="px-4 py-4 font-medium">{event.name}</td>
-                                                    <td className="px-4 py-4"><Badge>{event.status}</Badge></td>
+                                                    <td className="px-4 py-4">
+                                                        <Badge>{event.status}</Badge>
+                                                    </td>
                                                     <td className="px-4 py-4">{event.guests}</td>
                                                     <td className="px-4 py-4">{event.rsvp}%</td>
                                                 </tr>
@@ -118,13 +148,25 @@ export function AdminDashboard() {
                         </Card>
 
                         <Card className="dark:border-slate-800 dark:bg-slate-900">
-                            <CardHeader><CardTitle>Qualidade do evento</CardTitle></CardHeader>
+                            <CardHeader>
+                                <CardTitle>Qualidade do evento</CardTitle>
+                            </CardHeader>
                             <CardContent>
                                 <div className="grid gap-4">
-                                    {['SEO configurado', 'Galeria completa', 'Rate limit ativo', 'Fila de email pronta'].map((item) => (
-                                        <div key={item} className="flex items-center justify-between border-b border-slate-200 pb-3 text-sm dark:border-slate-800">
+                                    {[
+                                        'SEO configurado',
+                                        'Galeria completa',
+                                        'Rate limit ativo',
+                                        'Fila de email pronta',
+                                    ].map((item) => (
+                                        <div
+                                            key={item}
+                                            className="flex items-center justify-between border-b border-slate-200 pb-3 text-sm dark:border-slate-800"
+                                        >
                                             <span>{item}</span>
-                                            <Badge className="border-emerald-200 text-emerald-600 dark:border-emerald-900">OK</Badge>
+                                            <Badge className="border-emerald-200 text-emerald-600 dark:border-emerald-900">
+                                                OK
+                                            </Badge>
                                         </div>
                                     ))}
                                 </div>

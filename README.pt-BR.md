@@ -12,15 +12,15 @@ Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O c
 
 ## Serviços Docker
 
-| Serviço | Função | URL/porta padrão |
-| --- | --- | --- |
-| `nginx` | Servidor web da aplicação | `http://localhost:8080` |
-| `app` | Laravel / PHP-FPM | interno, porta `9000` |
-| `queue` | Worker de filas Laravel | interno |
-| `postgres` | Banco de dados | `localhost:5432` |
-| `redis` | Cache, sessão e fila | `localhost:6379` |
-| `mailpit` | Caixa de e-mail local | `http://localhost:8025` |
-| `minio` | Storage S3 local | API `localhost:9000`, console `http://localhost:9001` |
+| Serviço    | Função                    | URL/porta padrão                                      |
+| ---------- | ------------------------- | ----------------------------------------------------- |
+| `nginx`    | Servidor web da aplicação | `http://localhost:8080`                               |
+| `app`      | Laravel / PHP-FPM         | interno, porta `9000`                                 |
+| `queue`    | Worker de filas Laravel   | interno                                               |
+| `postgres` | Banco de dados            | `localhost:5432`                                      |
+| `redis`    | Cache, sessão e fila      | `localhost:6379`                                      |
+| `mailpit`  | Caixa de e-mail local     | `http://localhost:8025`                               |
+| `minio`    | Storage S3 local          | API `localhost:9000`, console `http://localhost:9001` |
 
 ## Requisitos
 
@@ -77,8 +77,12 @@ docker compose logs -f app
 docker compose logs -f queue
 docker compose exec app php artisan route:list
 docker compose exec app php artisan test
-docker compose exec app vendor/bin/pint
+docker compose exec app vendor/bin/pint --test
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M
+docker compose exec node npm run lint
+docker compose exec node npm run format:check
+docker compose exec node npm run typecheck
+docker compose exec node npm run build
 ```
 
 Para recriar o banco do zero, apagando dados locais:
@@ -106,7 +110,21 @@ O Docker já gera os assets de produção durante a build. Para desenvolver o fr
 ```bash
 npm install
 npm run dev
+npm run lint
+npm run format:check
 npm run typecheck
+```
+
+## Padrão de commits
+
+O projeto usa Conventional Commits em português brasileiro. Os hooks do Husky executam `lint-staged` antes do commit e `commitlint` na mensagem.
+
+Exemplos válidos:
+
+```text
+feat: adiciona fluxo de RSVP
+fix: corrige responsividade do painel admin
+docs: melhora guia Docker
 ```
 
 ## Solução de problemas

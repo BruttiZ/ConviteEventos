@@ -30,13 +30,13 @@ Screenshots and a short demo GIF will live in `docs/assets` as the UI stabilizes
 
 ## Stack
 
-| Area | Technology |
-| --- | --- |
-| Backend | Laravel 12, PHP 8.4, Sanctum |
-| Frontend | React 19, TypeScript, Vite, TailwindCSS, Framer Motion |
-| Data | PostgreSQL, Redis |
-| Local infra | Docker, Nginx, Mailpit, MinIO |
-| Quality | PestPHP, PHPStan/Larastan, Laravel Pint, ESLint, Prettier |
+| Area        | Technology                                                |
+| ----------- | --------------------------------------------------------- |
+| Backend     | Laravel 12, PHP 8.4, Sanctum                              |
+| Frontend    | React 19, TypeScript, Vite, TailwindCSS, Framer Motion    |
+| Data        | PostgreSQL, Redis                                         |
+| Local infra | Docker, Nginx, Mailpit, MinIO                             |
+| Quality     | PestPHP, PHPStan/Larastan, Laravel Pint, ESLint, Prettier |
 
 ## Quick Start
 

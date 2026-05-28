@@ -12,15 +12,15 @@ Data is stored in PostgreSQL. Redis is used for cache, sessions, and queues. The
 
 ## Docker services
 
-| Service | Purpose | Default URL/port |
-| --- | --- | --- |
-| `nginx` | Application web server | `http://localhost:8080` |
-| `app` | Laravel / PHP-FPM | internal, port `9000` |
-| `queue` | Laravel queue worker | internal |
-| `postgres` | Database | `localhost:5432` |
-| `redis` | Cache, sessions, and queues | `localhost:6379` |
-| `mailpit` | Local email inbox | `http://localhost:8025` |
-| `minio` | Local S3-compatible storage | API `localhost:9000`, console `http://localhost:9001` |
+| Service    | Purpose                     | Default URL/port                                      |
+| ---------- | --------------------------- | ----------------------------------------------------- |
+| `nginx`    | Application web server      | `http://localhost:8080`                               |
+| `app`      | Laravel / PHP-FPM           | internal, port `9000`                                 |
+| `queue`    | Laravel queue worker        | internal                                              |
+| `postgres` | Database                    | `localhost:5432`                                      |
+| `redis`    | Cache, sessions, and queues | `localhost:6379`                                      |
+| `mailpit`  | Local email inbox           | `http://localhost:8025`                               |
+| `minio`    | Local S3-compatible storage | API `localhost:9000`, console `http://localhost:9001` |
 
 ## Requirements
 
@@ -77,8 +77,12 @@ docker compose logs -f app
 docker compose logs -f queue
 docker compose exec app php artisan route:list
 docker compose exec app php artisan test
-docker compose exec app vendor/bin/pint
+docker compose exec app vendor/bin/pint --test
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M
+docker compose exec node npm run lint
+docker compose exec node npm run format:check
+docker compose exec node npm run typecheck
+docker compose exec node npm run build
 ```
 
 To recreate the database from scratch, deleting local data:
@@ -106,7 +110,21 @@ Docker already builds production assets during the image build. To work on the f
 ```bash
 npm install
 npm run dev
+npm run lint
+npm run format:check
 npm run typecheck
+```
+
+## Commit standard
+
+The project uses Conventional Commits written in Brazilian Portuguese. Husky hooks run `lint-staged` before each commit and `commitlint` against the commit message.
+
+Valid examples:
+
+```text
+feat: adiciona fluxo de RSVP
+fix: corrige responsividade do painel admin
+docs: melhora guia Docker
 ```
 
 ## Troubleshooting

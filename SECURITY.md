@@ -4,10 +4,10 @@
 
 O projeto ainda está em fase inicial. Correções de segurança serão aplicadas na branch `main` até a primeira versão estável.
 
-| Versão | Suporte |
-| --- | --- |
-| `main` | Sim |
-| Releases antigas | Não |
+| Versão           | Suporte |
+| ---------------- | ------- |
+| `main`           | Sim     |
+| Releases antigas | Não     |
 
 ## Como reportar vulnerabilidades
 

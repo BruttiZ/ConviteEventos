@@ -21,7 +21,7 @@ export type PublicEvent = {
     };
     content: {
         hosts?: string[];
-        schedule?: Array<{ time: string; title: string }>;
+        schedule?: { time: string; title: string }[];
         dress_code?: string;
         note?: string;
     };
@@ -30,7 +30,7 @@ export type PublicEvent = {
         primary?: string;
         accent?: string;
     };
-    gallery: Array<{ url: string; alt: string }>;
+    gallery: { url: string; alt: string }[];
     metrics?: {
         accepted: number;
         declined: number;

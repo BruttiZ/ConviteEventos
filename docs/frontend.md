@@ -29,3 +29,10 @@ docker compose exec node npm run lint
 docker compose exec node npm run format:check
 docker compose exec node npm run build
 ```
+
+## Guardrails
+
+- ESLint valida TypeScript/TSX com regras tipadas.
+- Prettier mantém CSS, React, JSON e Markdown consistentes.
+- `lint-staged` roda correções nos arquivos alterados antes do commit.
+- `commitlint` bloqueia mensagens fora do padrão Conventional Commits.

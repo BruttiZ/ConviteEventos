@@ -3,7 +3,14 @@
     "name": "convite-faculdade/invitely",
     "type": "project",
     "description": "Open source SaaS-ready digital invitations and event RSVP platform.",
-    "keywords": ["laravel", "react", "saas", "events", "rsvp", "multi-tenant"],
+    "keywords": [
+        "laravel",
+        "react",
+        "saas",
+        "events",
+        "rsvp",
+        "multi-tenant"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.4",
