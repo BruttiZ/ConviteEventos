@@ -5,8 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  backend:
+  quality:
     runs-on: ubuntu-latest
 
     services:
@@ -31,27 +35,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           extensions: bcmath, intl, pdo_pgsql, redis, zip
           coverage: none
+          tools: composer:v2
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install PHP dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
       - name: Prepare env
         run: |
           cp .env.example .env
           php artisan key:generate
+
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
 
       - name: Pint
         run: vendor/bin/pint --test
@@ -72,8 +83,18 @@ jobs:
           QUEUE_CONNECTION: sync
         run: php artisan test
 
+      - name: Frontend lint
+        run: npm run lint
+
+      - name: Frontend format
+        run: npm run format:check
+
       - name: Frontend typecheck
         run: npm run typecheck
 
       - name: Frontend build
         run: npm run build
+
+      - name: Commit messages
+        if: github.event_name == 'pull_request'
+        run: npx commitlint --from origin/${{ github.base_ref }} --to HEAD
