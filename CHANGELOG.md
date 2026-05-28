@@ -19,3 +19,4 @@ O formato segue a ideia do Keep a Changelog e o versionamento seguirá SemVer qu
 - Onboarding Docker validado localmente.
 - Comandos de análise PHPStan com limite de memória explícito.
 - Diretório `tests/Unit` preservado para execução consistente no CI.
+- Experiência mobile da landing pública com CTA fixo, RSVP mais claro e seções responsivas.
