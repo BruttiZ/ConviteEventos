@@ -6,21 +6,26 @@ if [ ! -f .env ] && [ -f .env.example ]; then
 fi
 
 if [ ! -f vendor/autoload.php ]; then
+    echo "Installing PHP dependencies..."
     composer install --no-interaction --prefer-dist --optimize-autoloader
 fi
 
 if ! grep -Eq '^APP_KEY=.+$' .env 2>/dev/null; then
+    echo "Generating Laravel application key..."
     php artisan key:generate --force --no-interaction || true
 fi
 
+echo "Preparing Laravel runtime..."
 php artisan optimize:clear --no-interaction || true
 php artisan storage:link --force --no-interaction || true
 
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    echo "Running database migrations..."
     php artisan migrate --force --no-interaction || true
 fi
 
 if [ "${RUN_SEEDERS:-true}" = "true" ]; then
+    echo "Seeding demo data..."
     php artisan db:seed --force --no-interaction || true
 fi
 
