@@ -19,7 +19,7 @@ Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O c
 | `nginx`    | Servidor web da aplicação | `http://localhost:8080`                               |
 | `app`      | Laravel / PHP-FPM         | interno, porta `9000`                                 |
 | `queue`    | Worker de filas Laravel   | interno                                               |
-| `node`     | Vite, build e tooling JS  | `http://localhost:5173`                               |
+| `node`     | Vite, build e tooling JS  | `http://localhost:5174`                               |
 | `postgres` | Banco de dados            | `localhost:5432`                                      |
 | `redis`    | Cache, sessão e fila      | `localhost:6379`                                      |
 | `mailpit`  | Caixa de e-mail local     | `http://localhost:8025`                               |
@@ -28,7 +28,7 @@ Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O c
 ## Requisitos
 
 - Docker Desktop ou Docker Engine com Docker Compose.
-- Portas livres: `8080`, `5173`, `5432`, `6379`, `8025`, `9000` e `9001`.
+- Portas livres: `8080`, `5174`, `5432`, `6379`, `8025`, `9000` e `9001`.
 - Conexão com a internet na primeira build para baixar imagens e dependências.
 
 Se alguma porta estiver ocupada, altere os valores no `.env`, por exemplo `APP_PORT=8081` ou `POSTGRES_PORT=5433`.

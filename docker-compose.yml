@@ -95,7 +95,7 @@ services:
     working_dir: /var/www/html
     command: sh -lc "npm install && npm run build && npm run dev -- --host 0.0.0.0"
     ports:
-      - "${VITE_PORT:-5173}:5173"
+      - "${VITE_PORT:-5174}:5173"
     volumes:
       - ./:/var/www/html
       - node-modules:/var/www/html/node_modules
