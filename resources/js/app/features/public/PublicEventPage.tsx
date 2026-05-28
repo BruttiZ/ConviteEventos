@@ -1,6 +1,20 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { CalendarDays, CheckCircle2, Clock3, MapPin, Moon, Music2, QrCode, Send, Share2, Sun } from 'lucide-react';
+import {
+    ArrowRight,
+    CalendarDays,
+    CheckCircle2,
+    Clock3,
+    Loader2,
+    MapPin,
+    Moon,
+    Music2,
+    QrCode,
+    Send,
+    Share2,
+    Sparkles,
+    Sun,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -9,6 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PublicEvent } from './types';
+
+type RsvpStatus = 'accepted' | 'declined';
+type CountdownItem = [label: string, value: number];
 
 const demoEvent: PublicEvent = {
     id: 'demo',
@@ -59,7 +76,7 @@ const demoEvent: PublicEvent = {
     metrics: { accepted: 42, declined: 3, invited: 120 },
 };
 
-function useCountdown(date: string): [string, number][] {
+function useCountdown(date: string): CountdownItem[] {
     const [now, setNow] = useState(() => Date.now());
 
     useEffect(() => {
@@ -103,9 +120,14 @@ export function PublicEventPage() {
     const event = eventQuery.data ?? demoEvent;
     const countdown = useCountdown(event.starts_at);
     const isDark = theme === 'dark';
+    const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    }).format(new Date(event.starts_at));
 
     const rsvp = useMutation({
-        mutationFn: async (status: 'accepted' | 'declined') => {
+        mutationFn: async (status: RsvpStatus) => {
             const response = await fetch(`/api/v1/events/${event.slug}/rsvp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -122,23 +144,40 @@ export function PublicEventPage() {
         },
     });
 
-    function submit(status: 'accepted' | 'declined') {
+    function submit(status: RsvpStatus) {
         rsvp.mutate(status);
     }
 
     function share() {
-        void navigator.share({ title: event.name, url: window.location.href });
+        if (typeof navigator.share === 'function') {
+            void navigator.share({ title: event.name, url: window.location.href });
+
+            return;
+        }
+
+        void navigator.clipboard.writeText(window.location.href);
     }
 
     return (
         <main
-            className={isDark ? 'dark min-h-screen bg-slate-950 text-white' : 'min-h-screen bg-stone-50 text-slate-950'}
+            className={
+                isDark
+                    ? 'dark min-h-screen bg-slate-950 pb-20 text-white md:pb-0'
+                    : 'min-h-screen bg-stone-50 pb-20 text-slate-950 md:pb-0'
+            }
         >
-            <section className="relative min-h-[92vh] overflow-hidden">
-                <img src={event.hero.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-slate-950/70" />
-                <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
-                    <div className="text-sm font-semibold tracking-normal">Invitely</div>
+            <section className="relative overflow-hidden">
+                <img
+                    src={event.hero.image_url}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="eager"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.78),rgba(2,6,23,0.7)_48%,rgba(2,6,23,0.92))]" />
+                <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                    <div className="inline-flex h-10 items-center rounded-full border border-white/15 bg-white/10 px-3 text-sm font-semibold tracking-normal text-white backdrop-blur">
+                        Invitely
+                    </div>
                     <div className="flex items-center gap-2">
                         <Button
                             variant="ghost"
@@ -156,32 +195,55 @@ export function PublicEventPage() {
                     </div>
                 </header>
 
-                <div className="relative z-10 mx-auto grid max-w-7xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-end lg:pt-24">
+                <div className="relative z-10 mx-auto grid min-h-[calc(100svh-72px)] max-w-7xl gap-8 px-4 pb-8 pt-8 sm:px-6 md:pb-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-end lg:px-8 lg:pt-20">
                     <motion.div
                         initial={{ opacity: 0, y: 18 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
+                        className="self-end"
                     >
-                        <Badge className="border-white/20 bg-white/10 text-white">{event.hero.eyebrow}</Badge>
-                        <h1 className="mt-6 max-w-4xl text-5xl font-bold leading-tight tracking-normal text-white md:text-7xl">
+                        <Badge className="border-white/20 bg-white/10 text-white">
+                            <Sparkles className="mr-2 h-3.5 w-3.5" />
+                            {event.hero.eyebrow}
+                        </Badge>
+                        <h1 className="mt-5 max-w-4xl text-4xl font-bold leading-tight tracking-normal text-white sm:text-5xl md:text-6xl lg:text-7xl">
                             {event.hero.title ?? event.name}
                         </h1>
-                        <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-200">{event.hero.subtitle}</p>
-                        <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-200">
-                            <span className="inline-flex items-center gap-2">
+                        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200 sm:text-lg sm:leading-8">
+                            {event.hero.subtitle}
+                        </p>
+                        <div className="mt-6 grid gap-2 text-sm text-slate-200 sm:flex sm:flex-wrap sm:gap-3">
+                            <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 backdrop-blur">
                                 <CalendarDays className="h-4 w-4" />
-                                {new Date(event.starts_at).toLocaleDateString('pt-BR')}
+                                {formattedDate}
                             </span>
-                            <span className="inline-flex items-center gap-2">
+                            <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 backdrop-blur">
                                 <MapPin className="h-4 w-4" />
                                 {event.venue.name}
                             </span>
                         </div>
+                        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                            <a
+                                href="#rsvp"
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-sky-500 px-4 text-sm font-semibold text-white transition hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
+                            >
+                                Confirmar presenca <ArrowRight className="h-4 w-4" />
+                            </a>
+                            <a
+                                href="#details"
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                            >
+                                Ver detalhes
+                            </a>
+                        </div>
                     </motion.div>
 
-                    <Card className="border-white/15 bg-white/10 text-white backdrop-blur-xl">
+                    <Card id="rsvp" className="border-white/15 bg-white/10 text-white backdrop-blur-xl">
                         <CardHeader>
                             <CardTitle>Confirme sua presenca</CardTitle>
+                            <p className="text-sm text-slate-200">
+                                Use o token do convite para registrar sua resposta em poucos segundos.
+                            </p>
                         </CardHeader>
                         <CardContent>
                             <form
@@ -196,6 +258,7 @@ export function PublicEventPage() {
                                         setForm({ ...form, invite_token: event.target.value });
                                     }}
                                     placeholder="Token do convite"
+                                    aria-label="Token do convite"
                                 />
                                 <Input
                                     type="number"
@@ -205,6 +268,7 @@ export function PublicEventPage() {
                                         setForm({ ...form, companions: Number(event.target.value) });
                                     }}
                                     placeholder="Acompanhantes"
+                                    aria-label="Numero de acompanhantes"
                                 />
                                 <Input
                                     value={form.message}
@@ -212,6 +276,7 @@ export function PublicEventPage() {
                                         setForm({ ...form, message: event.target.value });
                                     }}
                                     placeholder="Mensagem opcional"
+                                    aria-label="Mensagem opcional"
                                 />
                                 <div className="grid grid-cols-2 gap-3">
                                     <Button
@@ -221,7 +286,12 @@ export function PublicEventPage() {
                                         }}
                                         disabled={rsvp.isPending}
                                     >
-                                        <CheckCircle2 className="h-4 w-4" /> Confirmar
+                                        {rsvp.isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <CheckCircle2 className="h-4 w-4" />
+                                        )}
+                                        Confirmar
                                     </Button>
                                     <Button
                                         type="button"
@@ -235,19 +305,25 @@ export function PublicEventPage() {
                                     </Button>
                                 </div>
                                 {rsvp.isSuccess && (
-                                    <p className="text-sm text-emerald-200">RSVP registrado com sucesso.</p>
+                                    <p className="rounded-md border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">
+                                        RSVP registrado com sucesso. Seu QR Code fica disponivel para check-in.
+                                    </p>
                                 )}
-                                {rsvp.isError && <p className="text-sm text-rose-200">{rsvp.error.message}</p>}
+                                {rsvp.isError && (
+                                    <p className="rounded-md border border-rose-300/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-100">
+                                        {rsvp.error.message}
+                                    </p>
+                                )}
                             </form>
                         </CardContent>
                     </Card>
                 </div>
             </section>
 
-            <section className="mx-auto grid max-w-7xl gap-5 px-5 py-10 md:grid-cols-3">
+            <section className="mx-auto grid max-w-7xl gap-3 px-4 py-8 sm:px-6 md:grid-cols-3 md:gap-5 md:py-10 lg:px-8">
                 {countdown.map(([label, value]) => (
                     <Card key={label} className="dark:border-slate-800 dark:bg-slate-900">
-                        <CardContent className="pt-5">
+                        <CardContent className="flex min-h-28 items-center justify-between pt-5 md:block">
                             <div className="text-4xl font-bold">{value}</div>
                             <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{label}</div>
                         </CardContent>
@@ -255,20 +331,27 @@ export function PublicEventPage() {
                 ))}
             </section>
 
-            <section className="mx-auto grid max-w-7xl gap-8 px-5 py-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <section
+                id="details"
+                className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8 lg:py-10"
+            >
                 <div>
                     <Badge>
                         <Clock3 className="mr-2 h-3.5 w-3.5" /> Programacao
                     </Badge>
                     <div className="mt-5 grid gap-3">
-                        {event.content.schedule?.map((item) => (
-                            <div
+                        {event.content.schedule?.map((item, index) => (
+                            <motion.div
                                 key={`${item.time}-${item.title}`}
-                                className="flex items-center justify-between border-b border-slate-200 py-3 dark:border-slate-800"
+                                initial={{ opacity: 0, y: 8 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, margin: '-80px' }}
+                                transition={{ delay: index * 0.04 }}
+                                className="flex min-h-14 items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900"
                             >
                                 <span className="font-semibold">{item.title}</span>
                                 <span className="text-sm text-slate-500">{item.time}</span>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
@@ -284,7 +367,7 @@ export function PublicEventPage() {
                 </div>
             </section>
 
-            <section className="mx-auto grid max-w-7xl gap-5 px-5 py-10 lg:grid-cols-3">
+            <section className="mx-auto grid max-w-7xl gap-5 px-4 py-8 sm:px-6 lg:grid-cols-3 lg:px-8 lg:py-10">
                 <Card className="dark:border-slate-800 dark:bg-slate-900">
                     <CardHeader>
                         <CardTitle>Check-in QR</CardTitle>
@@ -328,12 +411,26 @@ export function PublicEventPage() {
                 </Card>
             </section>
 
-            <footer className="mx-auto flex max-w-7xl items-center justify-between px-5 py-8 text-sm text-slate-500">
+            <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                 <span>Open source SaaS-ready invitations.</span>
                 <Button variant="ghost" size="sm">
                     <Send className="h-4 w-4" /> Exportar CSV
                 </Button>
             </footer>
+
+            <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-12px_40px_rgba(15,23,42,0.12)] backdrop-blur md:hidden dark:border-slate-800 dark:bg-slate-950/95">
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                    <a
+                        href="#rsvp"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-sky-500 px-4 text-sm font-semibold text-white"
+                    >
+                        Confirmar <CheckCircle2 className="h-4 w-4" />
+                    </a>
+                    <Button variant="secondary" size="icon" onClick={share} aria-label="Compartilhar convite">
+                        <Share2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            </nav>
         </main>
     );
 }

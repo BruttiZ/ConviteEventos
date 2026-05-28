@@ -20,6 +20,17 @@ resources/js/
 - Acessibilidade desde o início.
 - Tipagem estrita.
 
+## Experiência pública mobile
+
+A landing pública prioriza celulares:
+
+- hero com título legível em telas pequenas;
+- CTA primário visível no primeiro viewport;
+- navegação fixa inferior para confirmação e compartilhamento;
+- áreas tocáveis com altura estável;
+- feedback visual para sucesso, erro e envio de RSVP;
+- galerias e cards fluidos entre celular, tablet e desktop.
+
 ## Comandos
 
 ```bash

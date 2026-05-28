@@ -8,6 +8,8 @@ O Nginx recebe as requisições em `http://localhost:8080` e encaminha PHP para 
 
 As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A página pública busca os dados do evento em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. O painel administrativo em `/admin` é uma interface inicial; as rotas administrativas de API existem, mas exigem autenticação via Sanctum.
 
+A experiência pública foi pensada mobile-first: hero responsivo, CTA fixo no celular, RSVP com feedback visual, countdown compacto, galeria fluida e microinterações suaves.
+
 Os dados persistem no PostgreSQL. Redis é usado para cache, sessão e fila. O container `queue` roda `php artisan queue:work`. Mailpit recebe e-mails de desenvolvimento. MinIO fica disponível para compatibilidade com armazenamento S3.
 
 ## Serviços Docker
