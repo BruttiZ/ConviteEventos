@@ -36,5 +36,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('rsvp', fn (Request $request) => Limit::perMinute(12)->by(
             $request->ip().'|'.$request->route('slug')
         ));
+
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(
+            $request->ip().'|'.$request->string('email')->lower()
+        ));
     }
 }

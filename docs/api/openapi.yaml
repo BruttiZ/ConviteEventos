@@ -14,6 +14,34 @@ tags:
   - name: Público
   - name: Admin
 paths:
+  /auth/login:
+    post:
+      tags: [Admin]
+      summary: Emite token Sanctum para uso nas rotas administrativas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@invitely.dev
+                password:
+                  type: string
+                  format: password
+                  example: password
+                device_name:
+                  type: string
+                  example: local-dev
+      responses:
+        '200':
+          description: Token emitido.
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /events/{slug}:
     get:
       tags: [Público]

@@ -80,6 +80,14 @@ Usuário demo:
 - E-mail: `admin@invitely.dev`
 - Senha: `password`
 
+Token API local:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@invitely.dev","password":"password","device_name":"local"}'
+```
+
 ## Comandos úteis
 
 ```bash
