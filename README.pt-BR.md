@@ -35,6 +35,20 @@ Se alguma porta estiver ocupada, altere os valores no `.env`, por exemplo `APP_P
 
 ## Como rodar com Docker
 
+Opção mais rápida no PowerShell:
+
+```powershell
+.\scripts\bootstrap.ps1
+```
+
+No Linux/macOS:
+
+```bash
+sh scripts/bootstrap.sh
+```
+
+Ou manualmente:
+
 1. Crie o arquivo de ambiente:
 
 ```bash
