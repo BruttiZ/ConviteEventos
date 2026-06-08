@@ -8,7 +8,7 @@ O frontend usa React, TypeScript, Vite, TailwindCSS e Framer Motion.
 resources/js/
   app/auth/              Sessao local, usuario autenticado e papeis
   app/features/landing/  Landing SaaS publica
-  app/features/auth/     Login, cadastro e atalhos de demo
+  app/features/auth/     Login e cadastro reais com Supabase Auth
   app/features/public/   Convite publico, RSVP, QR Code e compartilhamento
   app/features/admin/    Dashboard interativo por perfil
   components/ui/         Componentes reutilizaveis de interface
@@ -40,15 +40,18 @@ resources/js/
 
 Componentes seguem dark mode premium, bordas arredondadas, glassmorphism leve, gradientes sutis, icones Lucide e microinteracoes com Framer Motion.
 
-## Contas demo
+## Autenticacao
 
-Todas usam a senha `password`.
+O frontend usa Supabase Auth para cadastro e login reais no ambiente de portfolio.
 
-| Perfil              | E-mail               |
-| ------------------- | -------------------- |
-| Dono do evento      | `host@invitely.dev`  |
-| Convidado           | `guest@invitely.dev` |
-| Admin da plataforma | `admin@invitely.dev` |
+Variaveis necessarias:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
+
+O cadastro publico permite os perfis `Organizador` e `Convidado`. O papel `platform_admin` deve ser definido manualmente no Supabase metadata quando for necessario testar administracao da plataforma.
 
 ## Principios
 

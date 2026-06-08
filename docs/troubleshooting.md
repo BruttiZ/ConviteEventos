@@ -31,20 +31,27 @@ Rode o build pelo container Node:
 docker compose exec node npm run build
 ```
 
-## Login demo não entra
+## Login com Supabase não entra
 
-As contas demo são criadas pelos seeders. Se o banco local estiver sem usuários ou se o volume do Postgres foi reaproveitado antes dos seeders, rode:
+Confira se as variáveis do Supabase estão configuradas:
 
-```bash
-docker compose exec app php artisan db:seed --force
-docker compose exec app php artisan cache:clear
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
 ```
 
-Depois acesse `http://localhost:8080/login` com:
+Depois gere o build novamente:
 
-- `host@invitely.dev` / `password`
-- `guest@invitely.dev` / `password`
-- `admin@invitely.dev` / `password`
+```bash
+docker compose exec node npm run build
+```
+
+No painel do Supabase, confirme tambem:
+
+- `Authentication > Providers > Email` habilitado.
+- URL do projeto configurada corretamente.
+- Usuario criado em `Authentication > Users`.
+- Se confirmacao de e-mail estiver ativa, o e-mail precisa ser confirmado antes do login.
 
 ## Resetar tudo
 

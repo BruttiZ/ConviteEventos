@@ -6,26 +6,36 @@ Invitely e uma plataforma open source para convites digitais, RSVP, check-in por
 
 O Nginx recebe as requisicoes em `http://localhost:8080` e encaminha PHP para o container `app`, que roda Laravel em PHP 8.4-FPM. O Laravel entrega a SPA React pelo Blade em `resources/views/app.blade.php`; o React assume as rotas publicas, login/cadastro e dashboard no navegador.
 
-As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A pagina publica busca dados em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. O fluxo de login/cadastro emite tokens Sanctum e o dashboard em `/admin` muda conforme o papel do usuario.
+As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A pagina publica busca dados em `/api/v1/events/{slug}` e registra RSVP em `/api/v1/events/{slug}/rsvp`. Para o portfolio publicado na Vercel, o login/cadastro usa Supabase Auth e o dashboard em `/admin` muda conforme o papel salvo no metadata do usuario.
 
-## Fluxo demo
+## Fluxo de portfolio
 
 Abra:
 
 - Landing page: `http://localhost:8080`
-- Convite demo: `http://localhost:8080/events/invitely-launch-night`
+- Convite de exemplo: `http://localhost:8080/events/invitely-launch-night`
 - Login / cadastro: `http://localhost:8080/login`
 - Dashboard: `http://localhost:8080/admin`
 - Mailpit: `http://localhost:8025`
 - MinIO Console: `http://localhost:9001`
 
-Contas locais, todas com senha `password`:
+## Autenticacao
 
-| Perfil              | E-mail               | O que testa                                  |
-| ------------------- | -------------------- | -------------------------------------------- |
-| Dono do evento      | `host@invitely.dev`  | Eventos, convidados, temas, RSVP e check-in. |
-| Convidado           | `guest@invitely.dev` | Convite publico, confirmacao e QR Code.      |
-| Admin da plataforma | `admin@invitely.dev` | Visao operacional de tenants e plataforma.   |
+O frontend usa Supabase Auth para cadastro e login reais.
+
+Configure:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
+
+No cadastro, o usuario escolhe o perfil inicial:
+
+- `Organizador`: acessa o dashboard operacional.
+- `Convidado`: acessa o convite publico.
+
+O papel `Admin da plataforma` deve ser promovido manualmente no Supabase metadata com `role = platform_admin`.
 
 ## Redesign atual
 

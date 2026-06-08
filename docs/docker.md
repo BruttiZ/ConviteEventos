@@ -44,15 +44,18 @@ Rotas principais:
 - Landing page: `http://localhost:8080`
 - Login / cadastro: `http://localhost:8080/login`
 - Dashboard: `http://localhost:8080/admin`
-- Convite demo: `http://localhost:8080/events/invitely-launch-night`
+- Convite de exemplo: `http://localhost:8080/events/invitely-launch-night`
 
-## Contas demo
+## Autenticacao
 
-Todas usam a senha `password`:
+O frontend usa Supabase Auth para cadastro e login reais no ambiente de portfolio.
 
-- `host@invitely.dev`: dono do evento.
-- `guest@invitely.dev`: convidado.
-- `admin@invitely.dev`: admin da plataforma.
+Configure no `.env`:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
 
 ## Comandos uteis
 

@@ -15,11 +15,13 @@ O backend usa Laravel com uma organizacao inspirada em Clean Architecture e DDD 
 As rotas de autenticacao ficam em `/api/v1/auth`.
 
 - `POST /api/v1/auth/login`: emite token Sanctum.
-- `POST /api/v1/auth/register`: cria usuario demo e emite token Sanctum.
+- `POST /api/v1/auth/register`: cria usuario e emite token Sanctum.
 - `GET /api/v1/admin/me`: retorna o usuario autenticado.
 - `POST /api/v1/admin/logout`: revoga o token atual.
 
-Papeis usados na demo:
+No portfolio publicado na Vercel, o frontend usa Supabase Auth para cadastro/login reais. As rotas Sanctum continuam disponiveis para o backend Laravel completo e para evolucao da API.
+
+Papeis usados no produto:
 
 - `owner`: dono do evento, gerencia eventos, convidados e RSVP.
 - `guest`: convidado, acessa convite e QR Code.

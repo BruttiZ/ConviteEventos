@@ -8,6 +8,7 @@
 - Atualiza login/cadastro para a nova identidade visual.
 - Atualiza README e documentação frontend com a nova direção visual.
 - Adiciona build estático para Vercel sem quebrar o fluxo Laravel/Docker.
+- Substitui as contas hardcoded da tela de login por cadastro e autenticação reais via Supabase Auth.
 
 Todas as mudanças relevantes deste projeto serão documentadas neste arquivo.
 

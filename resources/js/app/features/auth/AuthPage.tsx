@@ -2,96 +2,102 @@ import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowRight, CalendarDays, Loader2, Mail, ShieldCheck, Sparkles, TicketCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { SyntheticEvent, useMemo, useState } from 'react';
+import { SyntheticEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthSession, UserRole, roleLabel, storeSession } from '../../auth/session';
-import { apiUrl } from '../../../lib/api';
+import { AuthSession, UserRole, storeSession } from '../../auth/session';
+import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
 
 type AuthMode = 'login' | 'register';
+type PublicRole = Exclude<UserRole, 'platform_admin'>;
 
-type AuthResponse = {
-    data: AuthSession;
-};
-
-const demoAccounts: {
-    role: UserRole;
+const roleOptions: {
+    role: PublicRole;
     title: string;
     description: string;
-    email: string;
     icon: LucideIcon;
 }[] = [
     {
         role: 'owner',
-        title: 'Dono da festa',
-        description: 'Cria eventos, convidados, temas e acompanha RSVP.',
-        email: 'host@invitely.dev',
+        title: 'Organizador',
+        description: 'Crie eventos, convites digitais, convidados, RSVP e check-in.',
         icon: CalendarDays,
     },
     {
         role: 'guest',
         title: 'Convidado',
-        description: 'Visualiza convite, confirma presença e usa QR Code.',
-        email: 'guest@invitely.dev',
+        description: 'Acesse convites, confirme presença e acompanhe seu QR Code.',
         icon: TicketCheck,
-    },
-    {
-        role: 'platform_admin',
-        title: 'Admin Invitely',
-        description: 'Enxerga operação, tenants, saúde e governança.',
-        email: 'admin@invitely.dev',
-        icon: ShieldCheck,
     },
 ];
 
 export function AuthPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<AuthMode>('login');
-    const [role, setRole] = useState<UserRole>('owner');
+    const [role, setRole] = useState<PublicRole>('owner');
     const [form, setForm] = useState({
-        name: 'Novo produtor',
-        email: 'host@invitely.dev',
-        password: 'password',
+        name: '',
+        email: '',
+        password: '',
     });
-
-    const selectedAccount = useMemo(() => demoAccounts.find((account) => account.role === role), [role]);
 
     const auth = useMutation({
         mutationFn: async () => {
-            const endpoint = apiUrl(mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register');
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({
-                    name: form.name,
+            const supabase = getSupabaseClient();
+
+            if (mode === 'register') {
+                const { data, error } = await supabase.auth.signUp({
                     email: form.email,
                     password: form.password,
-                    role,
-                    device_name: 'invitely-web',
-                }),
-            });
+                    options: {
+                        data: {
+                            name: form.name,
+                            role,
+                        },
+                    },
+                });
 
-            if (!response.ok) {
-                const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+                if (error) {
+                    throw new Error(error.message);
+                }
 
-                throw new Error(payload?.message ?? 'Não foi possível autenticar.');
+                if (!data.session || !data.user) {
+                    throw new Error('Cadastro criado. Confirme seu e-mail antes de acessar.');
+                }
+
+                return toAuthSession(data.session.access_token, data.user.id, form.name, form.email, role);
             }
 
-            return (await response.json()) as AuthResponse;
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: form.email,
+                password: form.password,
+            });
+
+            if (error) {
+                throw new Error(error.message);
+            }
+
+            const metadata = data.user.user_metadata;
+            const userRole = normalizeRole(metadata.role);
+            const userName =
+                typeof metadata.name === 'string' && metadata.name.trim().length > 0 ? metadata.name : form.email;
+
+            return toAuthSession(data.session.access_token, data.user.id, userName, form.email, userRole);
         },
-        onSuccess: (payload) => {
-            storeSession(payload.data);
-            void navigate(payload.data.user.role === 'guest' ? '/events/invitely-launch-night' : '/admin');
+        onSuccess: (session) => {
+            storeSession(session);
+            void navigate(session.user.role === 'guest' ? '/events/invitely-launch-night' : '/admin');
         },
     });
 
-    function chooseDemo(accountRole: UserRole, email: string) {
-        setMode('login');
-        setRole(accountRole);
-        setForm((current) => ({ ...current, email, password: 'password' }));
-    }
+    const canSubmit =
+        form.email.includes('@') && form.password.length >= 6 && (mode === 'login' || form.name.trim().length >= 2);
 
     function submit(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault();
+        if (!canSubmit) {
+            return;
+        }
+
         auth.mutate();
     }
 
@@ -122,41 +128,32 @@ export function AuthPage() {
                         className="w-full max-w-[calc(100vw-2rem)] py-4 sm:max-w-3xl sm:py-8 lg:py-14"
                     >
                         <span className="inline-flex items-center gap-2 rounded-full border border-[#263247] bg-[#121827]/80 px-3 py-1 text-xs text-[#CBD5E1]">
-                            <Sparkles className="h-3.5 w-3.5 text-[#22D3EE]" />
-                            Demo interativa
+                            <ShieldCheck className="h-3.5 w-3.5 text-[#22D3EE]" />
+                            Autenticação real com Supabase
                         </span>
                         <h1 className="mt-6 max-w-full break-words text-2xl font-extrabold leading-tight tracking-normal min-[360px]:text-3xl sm:text-5xl lg:text-6xl">
-                            Entre como cada perfil e navegue pela experiência real do produto.
+                            Crie sua conta e gerencie eventos com uma experiência SaaS completa.
                         </h1>
                         <p className="mt-5 max-w-full text-base leading-8 text-[#CBD5E1] sm:max-w-2xl">
-                            Use os atalhos abaixo para brincar com permissões diferentes: quem organiza a festa, quem
-                            foi convidado e quem administra a plataforma.
+                            O Invitely usa cadastro e login reais, sessões persistentes e perfis de acesso para
+                            demonstrar um fluxo profissional de produto em produção.
                         </p>
                     </motion.div>
 
-                    <div className="hidden min-w-0 gap-3 sm:grid md:grid-cols-3">
-                        {demoAccounts.map((account) => {
-                            const Icon = account.icon;
-                            const isSelected = account.role === role;
+                    <div className="hidden min-w-0 gap-3 sm:grid md:grid-cols-2">
+                        {roleOptions.map((option) => {
+                            const Icon = option.icon;
 
                             return (
-                                <motion.button
-                                    key={account.role}
-                                    type="button"
+                                <motion.div
+                                    key={option.role}
                                     whileHover={{ y: -4 }}
-                                    onClick={() => {
-                                        chooseDemo(account.role, account.email);
-                                    }}
-                                    className={
-                                        isSelected
-                                            ? 'min-w-0 rounded-2xl border border-[#22D3EE] bg-[#0EA5E9]/15 p-4 text-left shadow-[0_0_0_1px_rgba(34,211,238,0.25)]'
-                                            : 'min-w-0 rounded-2xl border border-[#263247] bg-[#121827]/80 p-4 text-left transition hover:border-[#8B5CF6]/60'
-                                    }
+                                    className="min-w-0 rounded-2xl border border-[#263247] bg-[#121827]/80 p-4"
                                 >
                                     <Icon className="h-5 w-5 text-[#22D3EE]" />
-                                    <div className="mt-3 font-bold">{account.title}</div>
-                                    <p className="mt-2 text-sm leading-6 text-[#CBD5E1]">{account.description}</p>
-                                </motion.button>
+                                    <div className="mt-3 font-bold">{option.title}</div>
+                                    <p className="mt-2 text-sm leading-6 text-[#CBD5E1]">{option.description}</p>
+                                </motion.div>
                             );
                         })}
                     </div>
@@ -176,6 +173,7 @@ export function AuthPage() {
                                     type="button"
                                     onClick={() => {
                                         setMode(item);
+                                        auth.reset();
                                     }}
                                     className={
                                         mode === item
@@ -190,46 +188,54 @@ export function AuthPage() {
 
                         <div className="mt-6">
                             <h2 className="text-xl font-bold">
-                                {mode === 'login' ? 'Acessar conta' : 'Criar conta demo'}
+                                {mode === 'login' ? 'Acessar sua conta' : 'Criar sua conta'}
                             </h2>
-                            <p className="mt-2 text-sm text-[#94A3B8]">
-                                Perfil selecionado: <strong className="text-[#CBD5E1]">{roleLabel(role)}</strong>
+                            <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
+                                {mode === 'login'
+                                    ? 'Entre com o e-mail e senha cadastrados no Supabase.'
+                                    : 'Escolha o perfil inicial da conta. Administradores da plataforma devem ser promovidos manualmente.'}
                             </p>
                         </div>
 
-                        <div className="mt-5 grid grid-cols-3 gap-2 sm:hidden">
-                            {demoAccounts.map((account) => {
-                                const Icon = account.icon;
+                        {!isSupabaseConfigured() ? (
+                            <div className="mt-5 rounded-2xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-4 text-sm leading-6 text-[#FDE68A]">
+                                Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` para habilitar login e
+                                cadastro.
+                            </div>
+                        ) : null}
 
-                                return (
-                                    <button
-                                        key={account.role}
-                                        type="button"
-                                        onClick={() => {
-                                            chooseDemo(account.role, account.email);
-                                        }}
-                                        className={
-                                            account.role === role
-                                                ? 'grid min-h-20 place-items-center rounded-xl border border-[#22D3EE] bg-[#0EA5E9]/15 px-2 text-center text-[11px] font-bold text-white'
-                                                : 'grid min-h-20 place-items-center rounded-xl border border-[#263247] bg-[#0B0F1A] px-2 text-center text-[11px] font-bold text-[#CBD5E1]'
-                                        }
-                                    >
-                                        <Icon className="h-4 w-4 text-[#22D3EE]" />
-                                        {account.role === 'owner'
-                                            ? 'Dono'
-                                            : account.role === 'guest'
-                                              ? 'Convidado'
-                                              : 'Admin'}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        {mode === 'register' ? (
+                            <div className="mt-5 grid grid-cols-2 gap-2">
+                                {roleOptions.map((option) => {
+                                    const Icon = option.icon;
+
+                                    return (
+                                        <button
+                                            key={option.role}
+                                            type="button"
+                                            onClick={() => {
+                                                setRole(option.role);
+                                            }}
+                                            className={
+                                                option.role === role
+                                                    ? 'grid min-h-20 place-items-center rounded-xl border border-[#22D3EE] bg-[#0EA5E9]/15 px-2 text-center text-xs font-bold text-white'
+                                                    : 'grid min-h-20 place-items-center rounded-xl border border-[#263247] bg-[#0B0F1A] px-2 text-center text-xs font-bold text-[#CBD5E1]'
+                                            }
+                                        >
+                                            <Icon className="h-4 w-4 text-[#22D3EE]" />
+                                            {option.title}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : null}
 
                         <form className="mt-5 grid gap-3" onSubmit={submit}>
                             {mode === 'register' ? (
                                 <AuthInput
                                     label="Nome"
                                     value={form.name}
+                                    autoComplete="name"
                                     onChange={(value) => {
                                         setForm({ ...form, name: value });
                                     }}
@@ -239,6 +245,7 @@ export function AuthPage() {
                                 label="E-mail"
                                 type="email"
                                 value={form.email}
+                                autoComplete="email"
                                 onChange={(value) => {
                                     setForm({ ...form, email: value });
                                 }}
@@ -247,21 +254,22 @@ export function AuthPage() {
                                 label="Senha"
                                 type="password"
                                 value={form.password}
+                                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                                 onChange={(value) => {
                                     setForm({ ...form, password: value });
                                 }}
                             />
                             <button
                                 type="submit"
-                                disabled={auth.isPending}
-                                className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold transition hover:scale-[1.03] disabled:opacity-60"
+                                disabled={auth.isPending || !canSubmit}
+                                className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {auth.isPending ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                     <ArrowRight className="h-4 w-4" />
                                 )}
-                                {mode === 'login' ? 'Entrar' : 'Criar e entrar'}
+                                {mode === 'login' ? 'Entrar' : 'Cadastrar e entrar'}
                             </button>
                             {auth.isError ? (
                                 <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
@@ -273,11 +281,11 @@ export function AuthPage() {
                         <div className="mt-5 rounded-2xl border border-[#263247] bg-[#0B0F1A] p-4 text-sm">
                             <div className="flex items-center gap-2 font-bold">
                                 <Mail className="h-4 w-4 text-[#22D3EE]" />
-                                {selectedAccount?.title}
+                                Sessão protegida
                             </div>
-                            <p className="mt-2 leading-6 text-[#CBD5E1]">{selectedAccount?.description}</p>
-                            <p className="mt-3 text-[#94A3B8]">
-                                Senha demo: <strong className="text-white">password</strong>
+                            <p className="mt-2 leading-6 text-[#CBD5E1]">
+                                O token retornado pelo Supabase é salvo localmente para liberar o dashboard e preservar
+                                a navegação entre páginas.
                             </p>
                         </div>
                     </motion.div>
@@ -287,16 +295,36 @@ export function AuthPage() {
     );
 }
 
+function normalizeRole(role: unknown): UserRole {
+    return role === 'guest' || role === 'platform_admin' || role === 'owner' ? role : 'owner';
+}
+
+function toAuthSession(token: string, id: string, name: string, email: string, role: UserRole): AuthSession {
+    return {
+        token,
+        token_type: 'Bearer',
+        user: {
+            id,
+            name,
+            email,
+            role,
+            tenant_id: null,
+        },
+    };
+}
+
 function AuthInput({
     label,
     value,
     onChange,
     type = 'text',
+    autoComplete,
 }: {
     label: string;
     value: string;
     onChange: (value: string) => void;
     type?: 'text' | 'email' | 'password';
+    autoComplete?: string;
 }) {
     return (
         <label className="block">
@@ -304,6 +332,7 @@ function AuthInput({
             <input
                 type={type}
                 value={value}
+                autoComplete={autoComplete}
                 onChange={(event) => {
                     onChange(event.target.value);
                 }}

@@ -65,13 +65,29 @@ Configure:
 ```env
 VITE_API_URL=https://sua-api-laravel.com
 VITE_APP_NAME=Invitely
-```
-
-Se usar Supabase no frontend:
-
-```env
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
+
+`VITE_API_URL` e necessario quando a SPA publicada na Vercel precisa consumir uma API Laravel publicada separadamente.
+
+`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sao necessarios para login e cadastro reais com Supabase Auth.
+
+## Supabase Auth
+
+No Supabase, habilite autenticação por e-mail/senha em `Authentication > Providers > Email`.
+
+O cadastro publico salva no metadata:
+
+- `name`: nome informado no formulario.
+- `role`: `owner` ou `guest`.
+
+Para testar administracao da plataforma, edite o metadata do usuario no Supabase para:
+
+```json
+{
+    "role": "platform_admin"
+}
 ```
 
 Importante: `VITE_API_URL` deve apontar para a raiz do backend, sem `/api` no final.

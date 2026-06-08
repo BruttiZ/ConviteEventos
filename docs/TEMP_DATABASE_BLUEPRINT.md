@@ -66,7 +66,7 @@ Representa usuários autenticados.
 Papéis atuais:
 
 - `owner`: dono/organizador do evento.
-- `guest`: convidado autenticado ou perfil demo de convidado.
+- `guest`: convidado autenticado.
 - `platform_admin`: administrador global da plataforma.
 
 Campos importantes:
@@ -77,15 +77,21 @@ Campos importantes:
 - `password`: hash.
 - `role`
 
-Usuários demo obrigatórios:
+No portfolio publicado, os usuários são criados pelo Supabase Auth. O metadata do usuário deve conter:
 
-| Papel               | E-mail               | Senha      |
-| ------------------- | -------------------- | ---------- |
-| Dono do evento      | `host@invitely.dev`  | `password` |
-| Convidado           | `guest@invitely.dev` | `password` |
-| Admin da plataforma | `admin@invitely.dev` | `password` |
+```json
+{
+    "name": "Nome do usuário",
+    "role": "owner"
+}
+```
 
-Observação: a senha nunca deve ser salva como texto puro. O seeder deve usar `Hash::make('password')`.
+Papéis públicos permitidos no cadastro:
+
+- `owner`
+- `guest`
+
+O papel `platform_admin` deve ser atribuído manualmente por operação administrativa, nunca pelo formulário público.
 
 ### `event_templates`
 
@@ -290,22 +296,22 @@ User 1 --- N CheckIn como checked_in_by
 User 1 --- N AuditLog como actor
 ```
 
-## Dados mínimos para o app abrir e brincar
+## Dados mínimos para o app de portfolio
 
-Para o app funcionar localmente com a demo, o banco precisa ter pelo menos:
+Para o app funcionar como portfolio com dados de produto, o ambiente precisa ter pelo menos:
 
-- 1 tenant demo;
-- 3 usuários demo;
-- 1 template demo;
+- 1 tenant de exemplo;
+- usuários reais criados no Supabase Auth;
+- 1 template de exemplo;
 - 1 evento publicado;
-- 30 convidados fake;
-- 1 convidado com `invite_token = demo-invite-token`;
+- convidados de exemplo ou convidados reais importados;
+- 1 convidado com token de convite válido;
 - migrations completas;
 - tabela `personal_access_tokens`.
 
-## Comandos para recuperar credenciais demo
+## Comandos para recuperar dados locais
 
-Se o login parar, quase sempre o banco está sem seed.
+Se os dados locais do Laravel sumirem, rode:
 
 Use:
 
@@ -314,13 +320,11 @@ docker compose exec app php artisan db:seed --force
 docker compose exec app php artisan cache:clear
 ```
 
-Depois teste:
+Para testar autenticação no portfolio, use o formulário real em `/login` com Supabase Auth configurado:
 
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -d '{"email":"host@invitely.dev","password":"password","device_name":"invitely-web"}'
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
 ```
 
 ## Reset completo de banco local
@@ -353,12 +357,12 @@ Um banco local saudável deve retornar linhas em:
 docker compose exec app php artisan db:show --counts
 ```
 
-Valores mínimos esperados para demo:
+Valores mínimos esperados para dados locais:
 
 - `tenants`: 1+
-- `users`: 3+
+- `users`: opcional quando a autenticação principal estiver no Supabase
 - `events`: 1+
 - `guests`: 30+
 - `event_templates`: 1+
 
-Se `users = 0`, o login demo não vai funcionar.
+Se `users = 0`, o login Supabase ainda pode funcionar, desde que as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` estejam configuradas.

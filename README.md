@@ -15,7 +15,7 @@ O projeto usa Laravel, React, TypeScript, PostgreSQL, Redis, TailwindCSS, Framer
 Depois de subir o Docker, abra:
 
 - Landing page: `http://localhost:8080`
-- Convite demo: `http://localhost:8080/events/invitely-launch-night`
+- Convite de exemplo: `http://localhost:8080/events/invitely-launch-night`
 - Login / cadastro: `http://localhost:8080/login`
 - Dashboard interativo: `http://localhost:8080/admin`
 
@@ -35,9 +35,9 @@ O redesign atual usa uma estética dark premium inspirada em Linear, Stripe, Ver
 - Landing page SaaS moderna com hero, mockup flutuante de dashboard e cards de benefícios.
 - Convite público premium com palco visual, RSVP reativo, feedback de confirmação, countdown, galeria e QR Code.
 - Formulário de confirmação com nome, e-mail, acompanhantes com botões `+` e `-`, mensagem opcional, confirmar e recusar.
-- Login/cadastro com perfis demo para dono do evento, convidado e admin da plataforma.
+- Login/cadastro real com Supabase Auth e perfis iniciais de organizador ou convidado.
 - Dashboard responsivo com sidebar no desktop, bottom navigation no mobile, métricas, gráfico de linha, distribuição de RSVP e cards de eventos.
-- Telas demo de eventos, convidados, templates, check-in, relatórios, integrações, configurações e plataforma.
+- Telas operacionais de eventos, convidados, templates, check-in, relatórios, integrações, configurações e plataforma.
 - API Laravel versionada com Sanctum, Actions, DTOs, repositories, Form Requests, policies e resources.
 - Stack Docker com Nginx, PHP 8.4-FPM, PostgreSQL, Redis, Mailpit, MinIO e Node para build frontend.
 
@@ -47,7 +47,7 @@ O redesign atual usa uma estética dark premium inspirada em Linear, Stripe, Ver
 | ----------- | -------------------------------------------------------------------- |
 | Backend     | Laravel 12, PHP 8.4, Sanctum                                         |
 | Frontend    | React 19, TypeScript, Vite, TailwindCSS, Framer Motion, Lucide Icons |
-| Dados       | PostgreSQL, Redis                                                    |
+| Dados       | PostgreSQL, Redis, Supabase Auth                                     |
 | Infra local | Docker, Nginx, Mailpit, MinIO                                        |
 | Qualidade   | PestPHP, PHPStan/Larastan, Laravel Pint, ESLint, Prettier            |
 
@@ -65,15 +65,23 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
-## Contas demo
+## Autenticação
 
-Todas usam a senha `password`.
+O frontend usa Supabase Auth para cadastro e login reais.
 
-| Perfil              | E-mail               | O que testa                                  |
-| ------------------- | -------------------- | -------------------------------------------- |
-| Dono do evento      | `host@invitely.dev`  | Eventos, convidados, temas, RSVP e check-in. |
-| Convidado           | `guest@invitely.dev` | Convite público, confirmação e QR Code.      |
-| Admin da plataforma | `admin@invitely.dev` | Visão operacional de tenants e plataforma.   |
+Configure no `.env` local ou nas variáveis da Vercel:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
+
+No cadastro, o usuário escolhe o perfil inicial:
+
+- `Organizador`: acessa o dashboard operacional.
+- `Convidado`: acessa o convite público.
+
+O papel `Admin da plataforma` não é autoatribuído publicamente. Para testar esse papel com Supabase, promova o usuário manualmente no metadata do Supabase para `role = platform_admin`.
 
 ## Comandos úteis
 
@@ -104,16 +112,16 @@ O backend é organizado por fronteiras de domínio e casos de uso:
 O frontend é organizado por features:
 
 - `resources/js/app/features/landing`: landing page SaaS.
-- `resources/js/app/features/auth`: login, cadastro e perfis demo.
+- `resources/js/app/features/auth`: login e cadastro reais com Supabase Auth.
 - `resources/js/app/features/admin`: dashboard operacional.
 - `resources/js/app/features/public`: convite público e RSVP.
 
-## Fluxo demo
+## Fluxo de portfólio
 
 1. Abra `http://localhost:8080`.
 2. Clique em `Começar agora` ou acesse `http://localhost:8080/login`.
-3. Escolha um dos três perfis demo.
-4. Entre com a senha `password`.
+3. Crie uma conta com e-mail, senha e perfil inicial.
+4. Faça login com as credenciais cadastradas.
 5. Explore o dashboard, os cards, o check-in e o convite público.
 
 No Docker local, o React é servido pelo build gerado em `public/build` através do Nginx. O service worker é desativado fora de produção para evitar JavaScript antigo em cache.

@@ -113,7 +113,7 @@ export function AdminDashboard() {
     const session = getStoredSession();
     const user = session?.user;
     const [view, setView] = useState<AdminView>('overview');
-    const [toast, setToast] = useState('Dashboard carregado. Explore os módulos da demo.');
+    const [toast, setToast] = useState('Dashboard carregado. Explore os módulos do produto.');
     const navigation = useMemo(() => (user ? navigationFor(user) : []), [user]);
 
     if (!session || !user) {
@@ -203,7 +203,7 @@ export function AdminDashboard() {
                             <ActionButton
                                 variant="secondary"
                                 onClick={() => {
-                                    notify('Relatório exportado em modo demo.');
+                                    notify('Relatório preparado para exportação.');
                                 }}
                             >
                                 <Download className="h-4 w-4" />
@@ -435,7 +435,7 @@ function CheckInView({ onAction }: { onAction: (message: string) => void }) {
         <Panel title="Check-in por QR Code" className="mt-6 max-w-2xl">
             <div className="grid gap-4">
                 <input
-                    defaultValue="demo-invite-token"
+                    placeholder="Cole ou leia o token do convite"
                     className="h-14 rounded-xl border border-[#263247] bg-[#0B0F1A] px-4 text-sm text-white outline-none transition focus:border-[#22D3EE]"
                 />
                 <ActionButton
@@ -478,7 +478,9 @@ function SimpleModule({
                     >
                         <Icon className="h-5 w-5 text-[#22D3EE]" />
                         <h3 className="mt-4 font-bold">{item}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[#94A3B8]">Modulo demo preparado para evoluir.</p>
+                        <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
+                            Módulo preparado para evoluir com dados reais do tenant.
+                        </p>
                     </motion.button>
                 ))}
             </div>
