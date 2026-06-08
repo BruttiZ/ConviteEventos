@@ -19,6 +19,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthSession, UserRole, storeSession } from '../../auth/session';
 import { siteUrl } from '../../../lib/site';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
+import { retryWithExponentialBackoff } from '../../../lib/retry';
 
 type AuthMode = 'login' | 'register';
 type PublicRole = Exclude<UserRole, 'platform_admin'>;
@@ -32,6 +33,28 @@ type AuthMutationResult =
           kind: 'pending_confirmation';
           message: string;
       };
+
+function formatErrorMessage(error: Error): string {
+    const message = error.message.toLowerCase();
+
+    if (message.includes('rate limit') || message.includes('429') || message.includes('too many requests')) {
+        return 'Muitas tentativas de cadastro. Aguarde alguns momentos e tente novamente. Estamos reintentando automaticamente...';
+    }
+
+    if (message.includes('user already exists')) {
+        return 'Este e-mail já está cadastrado. Faça login em vez disso.';
+    }
+
+    if (message.includes('invalid email')) {
+        return 'Formato de e-mail inválido.';
+    }
+
+    if (message.includes('weak password')) {
+        return 'Senha muito fraca. Use letras, números e caracteres especiais.';
+    }
+
+    return error.message;
+}
 
 const roleOptions: {
     role: PublicRole;
@@ -89,34 +112,47 @@ export function AuthPage() {
                     throw new Error('Preencha o cadastro com uma senha forte e confirme a senha corretamente.');
                 }
 
-                const { data, error } = await supabase.auth.signUp({
-                    email: form.email,
-                    password: form.password,
-                    options: {
-                        emailRedirectTo: siteUrl('/login'),
-                        data: {
-                            name: form.name.trim(),
-                            role,
-                        },
+                // Use retry with exponential backoff for signup
+                const { data, error } = await retryWithExponentialBackoff(
+                    () =>
+                        supabase.auth.signUp({
+                            email: form.email,
+                            password: form.password,
+                            options: {
+                                // Don't set emailRedirectTo - we'll use OTP instead
+                                data: {
+                                    name: form.name.trim(),
+                                    role,
+                                },
+                            },
+                        }),
+                    {
+                        maxAttempts: 3,
+                        baseDelayMs: 2000, // Start with 2 second delay for auth
+                        maxDelayMs: 10000,
                     },
-                });
+                );
 
                 if (error) {
                     throw new Error(error.message);
                 }
 
-                if (!data.session || !data.user) {
+                // After signup, redirect to OTP verification
+                if (data.user && !data.session) {
                     return {
                         kind: 'pending_confirmation',
-                        message:
-                            'Cadastro criado. Enviamos um link de confirmação para o seu e-mail. Depois de confirmar, volte para fazer login.',
+                        message: 'Cadastro criado! Agora vamos enviar um código para confirmar seu e-mail.',
                     };
                 }
 
-                return {
-                    kind: 'authenticated',
-                    session: toAuthSession(data.session.access_token, data.user.id, form.name, form.email, role),
-                };
+                if (data.session && data.user) {
+                    return {
+                        kind: 'authenticated',
+                        session: toAuthSession(data.session.access_token, data.user.id, form.name, form.email, role),
+                    };
+                }
+
+                throw new Error('Erro ao criar conta. Tente novamente.');
             }
 
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -140,19 +176,17 @@ export function AuthPage() {
         },
         onSuccess: (result) => {
             if (result.kind === 'pending_confirmation') {
-                setStatusMessage(result.message);
-                setMode('login');
-                setForm((current) => ({
-                    ...current,
-                    name: '',
-                    password: '',
-                    passwordConfirmation: '',
-                }));
+                // Redirect to OTP verification page with email
+                void navigate(`/verify?email=${encodeURIComponent(form.email)}`);
                 return;
             }
 
             storeSession(result.session);
             void navigate(result.session.user.role === 'guest' ? '/events/invitely-launch-night' : '/admin');
+        },
+        onError: (error) => {
+            // Error is already handled by formatErrorMessage in the component
+            console.error('Auth error:', error);
         },
     });
 
@@ -163,13 +197,23 @@ export function AuthPage() {
             }
 
             const supabase = getSupabaseClient();
-            const { error } = await supabase.auth.resend({
-                type: 'signup',
-                email: form.email,
-                options: {
-                    emailRedirectTo: siteUrl('/login'),
+
+            // Use retry for resend as well (email rate limits apply here too)
+            const { error } = await retryWithExponentialBackoff(
+                () =>
+                    supabase.auth.resend({
+                        type: 'signup',
+                        email: form.email,
+                        options: {
+                            emailRedirectTo: siteUrl('/login'),
+                        },
+                    }),
+                {
+                    maxAttempts: 3,
+                    baseDelayMs: 2000,
+                    maxDelayMs: 10000,
                 },
-            });
+            );
 
             if (error) {
                 throw new Error(error.message);
@@ -409,12 +453,12 @@ export function AuthPage() {
                             </button>
                             {auth.isError ? (
                                 <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
-                                    {auth.error.message}
+                                    {formatErrorMessage(auth.error)}
                                 </p>
                             ) : null}
                             {resendConfirmation.isError ? (
                                 <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
-                                    {resendConfirmation.error.message}
+                                    {formatErrorMessage(resendConfirmation.error)}
                                 </p>
                             ) : null}
                         </form>

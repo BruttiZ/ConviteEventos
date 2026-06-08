@@ -20,6 +20,7 @@ import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { AuthUser, clearSession, getStoredSession } from '../../auth/session';
+import { CreateEventForm } from './CreateEventForm';
 
 type AdminView =
     | 'overview'
@@ -113,6 +114,7 @@ export function AdminDashboard() {
     const session = getStoredSession();
     const user = session?.user;
     const [view, setView] = useState<AdminView>('overview');
+    const [isCreatingEvent, setIsCreatingEvent] = useState(false);
     const [toast, setToast] = useState('Dashboard carregado. Explore os módulos do produto.');
     const navigation = useMemo(() => (user ? navigationFor(user) : []), [user]);
 
@@ -211,8 +213,9 @@ export function AdminDashboard() {
                             </ActionButton>
                             <ActionButton
                                 onClick={() => {
+                                    setIsCreatingEvent(true);
                                     setView('events');
-                                    notify('Novo evento iniciado como rascunho.');
+                                    notify('Novo evento iniciado.');
                                 }}
                             >
                                 <CalendarDays className="h-4 w-4" />
@@ -224,7 +227,17 @@ export function AdminDashboard() {
                     <Toast message={toast} />
 
                     {view === 'overview' && <Overview onAction={notify} />}
-                    {view === 'events' && <EventsView onAction={notify} />}
+                    {view === 'events' &&
+                        (isCreatingEvent ? (
+                            <CreateEventForm
+                                onCancel={() => {
+                                    setIsCreatingEvent(false);
+                                    notify('Criação de evento cancelada.');
+                                }}
+                            />
+                        ) : (
+                            <EventsView onAction={notify} />
+                        ))}
                     {view === 'guests' && <SimpleModule title="Convidados" icon={UsersRound} onAction={notify} />}
                     {view === 'templates' && <TemplatesView onAction={notify} />}
                     {view === 'checkin' && <CheckInView onAction={notify} />}

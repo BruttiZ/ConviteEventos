@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\AdminGuestController;
 use App\Http\Controllers\Api\Admin\AdminGuestExportController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\SupabaseConfirmationController;
+use App\Http\Controllers\Api\InviteController;
 use App\Http\Controllers\Api\Public\PublicEventController;
 use App\Http\Controllers\Api\Public\PublicRsvpCodeController;
 use App\Http\Controllers\Api\Public\PublicRsvpController;
@@ -16,6 +17,11 @@ Route::prefix('v1')->middleware(['throttle:api', 'tenant.optional'])->group(func
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:login');
     Route::post('/auth/resend-confirmation', [SupabaseConfirmationController::class, 'resend'])->middleware('throttle:auth-email');
+
+    // Public invite endpoints
+    Route::get('/invites/{token}', [InviteController::class, 'show']);
+    Route::post('/invites/{token}/accept', [InviteController::class, 'accept']);
+    Route::post('/invites/{token}/reject', [InviteController::class, 'reject']);
 
     Route::get('/events/{slug}', [PublicEventController::class, 'show']);
     Route::post('/events/{slug}/rsvp', [PublicRsvpController::class, 'store'])->middleware('throttle:rsvp');
