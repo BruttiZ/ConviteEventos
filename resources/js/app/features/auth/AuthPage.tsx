@@ -3,16 +3,20 @@ import { motion } from 'framer-motion';
 import {
     AlertTriangle,
     ArrowRight,
+    BarChart3,
     Building2,
     CalendarDays,
     CheckCircle2,
+    ChevronDown,
     Eye,
     EyeOff,
     Loader2,
     PartyPopper,
+    QrCode,
     ShieldCheck,
     Sparkles,
     TicketCheck,
+    UsersRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { SyntheticEvent, useMemo, useState } from 'react';
@@ -41,7 +45,7 @@ const roleOptions: {
     registerHint: string;
     email: string;
     defaultName: string;
-    accent: string;
+    gradient: string;
     icon: LucideIcon;
 }[] = [
     {
@@ -52,7 +56,7 @@ const roleOptions: {
         registerHint: 'Perfil interno para operar a plataforma e monitorar clientes.',
         email: 'admin@invitely.dev',
         defaultName: 'Invitely Admin',
-        accent: 'border-violet-300 bg-violet-400/15 text-violet-100',
+        gradient: 'from-[#A78BFA] to-[#0EA5E9]',
         icon: ShieldCheck,
     },
     {
@@ -63,7 +67,7 @@ const roleOptions: {
         registerHint: 'Ideal para cerimonialistas, anfitrioes e empresas que vendem eventos.',
         email: 'host@invitely.dev',
         defaultName: 'Marina Host',
-        accent: 'border-sky-300 bg-sky-400/15 text-sky-100',
+        gradient: 'from-[#8B5CF6] to-[#22D3EE]',
         icon: CalendarDays,
     },
     {
@@ -74,9 +78,16 @@ const roleOptions: {
         registerHint: 'Perfeito para simular a experiencia de quem recebeu o convite.',
         email: 'guest@invitely.dev',
         defaultName: 'Lucas Convidado',
-        accent: 'border-emerald-300 bg-emerald-400/15 text-emerald-100',
+        gradient: 'from-[#22C55E] to-[#22D3EE]',
         icon: TicketCheck,
     },
+];
+
+const previewMetrics = [
+    { label: 'Eventos', value: '24', icon: CalendarDays },
+    { label: 'Convidados', value: '1.204', icon: UsersRound },
+    { label: 'RSVP', value: '76%', icon: BarChart3 },
+    { label: 'Check-ins', value: '846', icon: QrCode },
 ];
 
 function destinationFor(role: UserRole): string {
@@ -311,226 +322,418 @@ export function AuthPage() {
     }
 
     return (
-        <main className="min-h-screen bg-slate-950 text-white">
-            <section className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_460px] lg:px-8">
-                <div className="flex flex-col justify-between py-4">
-                    <header className="flex items-center justify-between">
-                        <Link
-                            to="/"
-                            className="inline-flex h-10 items-center rounded-full bg-white/10 px-4 text-sm font-bold"
-                        >
-                            Invitely
+        <main className="min-h-screen overflow-hidden bg-[#060B1A] text-white">
+            <section className="relative mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+                <div className="absolute left-1/2 top-0 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-[#8B5CF6]/20 blur-3xl" />
+                <div className="absolute bottom-12 right-0 h-72 w-[34rem] rounded-full bg-[#22D3EE]/10 blur-3xl" />
+                <div className="absolute left-0 top-64 h-72 w-72 rounded-full bg-[#0EA5E9]/10 blur-3xl" />
+
+                <header className="relative z-10 flex items-center justify-between rounded-2xl border border-[#263247]/70 bg-[#0B0F1A]/70 px-4 py-3 backdrop-blur-xl">
+                    <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold">
+                        <Sparkles className="h-5 w-5 text-[#8B5CF6]" />
+                        Invitely
+                    </Link>
+                    <nav className="hidden items-center gap-7 text-sm text-[#94A3B8] md:flex">
+                        <Link to="/#beneficios" className="transition hover:text-white">
+                            Recursos
                         </Link>
+                        <button className="inline-flex items-center gap-1 transition hover:text-white">
+                            Solucoes <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                        <Link to="/#precos" className="transition hover:text-white">
+                            Precos
+                        </Link>
+                        <Link to="/#blog" className="transition hover:text-white">
+                            Blog
+                        </Link>
+                    </nav>
+                    <div className="flex items-center gap-2">
                         <Link
                             to="/events/invitely-launch-night"
-                            className="inline-flex h-10 items-center rounded-md border border-white/10 px-4 text-sm font-semibold transition hover:bg-white/10"
+                            className="hidden text-sm text-[#94A3B8] transition hover:text-white sm:block"
                         >
                             Ver convite
                         </Link>
-                    </header>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45 }}
-                        className="max-w-3xl py-12"
-                    >
-                        <BadgeLine />
-                        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-normal sm:text-5xl lg:text-6xl">
-                            Login e cadastro por permissao, com uma area diferente para cada pessoa.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-                            Escolha se voce esta operando o software, criando uma festa ou entrando como convidado. A
-                            demo responde aos cliques e mostra o que cada perfil deveria enxergar.
-                        </p>
-                    </motion.div>
-
-                    <div className="grid gap-3 md:grid-cols-3">
-                        {roleOptions.map((account) => {
-                            const Icon = account.icon;
-                            const isSelected = account.role === role;
-
-                            return (
-                                <div
-                                    key={account.role}
-                                    className={
-                                        isSelected
-                                            ? `rounded-lg border p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.25)] transition ${account.accent}`
-                                            : 'rounded-lg border border-white/10 bg-white/5 p-4 transition hover:bg-white/10'
-                                    }
-                                >
-                                    <Icon className="h-5 w-5" />
-                                    <div className="mt-3 font-semibold">{account.title}</div>
-                                    <p className="mt-1 min-h-24 text-sm leading-6 text-slate-300">
-                                        {account.description}
-                                    </p>
-                                    <div className="mt-4 grid grid-cols-2 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                chooseDemo(account);
-                                            }}
-                                            className={
-                                                isSelected && mode === 'login'
-                                                    ? 'h-9 rounded-md bg-sky-500 text-sm font-semibold text-white'
-                                                    : 'h-9 rounded-md border border-white/10 bg-white text-sm font-semibold text-slate-950'
-                                            }
-                                        >
-                                            Login
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                chooseRegister(account);
-                                            }}
-                                            className={
-                                                isSelected && mode === 'register'
-                                                    ? 'h-9 rounded-md bg-sky-500 text-sm font-semibold text-white'
-                                                    : 'h-9 rounded-md text-sm font-semibold text-white hover:bg-white/10'
-                                            }
-                                        >
-                                            Cadastro
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setMode('register');
+                            }}
+                            className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-4 text-sm font-semibold transition hover:scale-[1.03]"
+                        >
+                            Criar conta
+                        </button>
                     </div>
-                </div>
+                </header>
 
-                <div className="flex items-center">
-                    <div className="w-full rounded-lg border border-white/10 bg-white p-5 text-slate-950 shadow-2xl">
-                        <div className="flex rounded-md bg-slate-100 p-1">
-                            {(['login', 'register'] as const).map((item) => (
+                <div className="relative z-10 grid min-h-[calc(100vh-6rem)] gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_460px] lg:items-center lg:py-16">
+                    <div className="min-w-0">
+                        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+                            <span className="inline-flex items-center gap-2 rounded-full border border-[#263247] bg-[#121827]/80 px-3 py-1 text-xs text-[#CBD5E1]">
+                                <Sparkles className="h-3.5 w-3.5 text-[#8B5CF6]" />
+                                Login multi-perfil
+                            </span>
+                            <h1 className="mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-normal sm:text-5xl lg:text-6xl">
+                                Entre como <span className="text-[#A78BFA]">admin</span>, organizador ou convidado.
+                            </h1>
+                            <p className="mt-5 max-w-2xl text-base leading-8 text-[#CBD5E1] sm:text-lg">
+                                Uma experiencia elegante para testar permissoes diferentes, navegar por dashboards
+                                separados e sentir o produto funcionando mesmo em modo demo.
+                            </p>
+                            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                                 <button
-                                    key={item}
                                     type="button"
                                     onClick={() => {
-                                        setMode(item);
+                                        if (selectedAccount) {
+                                            chooseDemo(selectedAccount);
+                                        }
                                     }}
-                                    className={
-                                        mode === item
-                                            ? 'h-9 flex-1 rounded bg-white text-sm font-semibold shadow-sm'
-                                            : 'h-9 flex-1 rounded text-sm font-semibold text-slate-500'
-                                    }
+                                    className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-5 text-sm font-bold transition hover:scale-[1.03]"
                                 >
-                                    {item === 'login' ? 'Login' : 'Cadastro'}
+                                    Usar perfil selecionado <ArrowRight className="h-4 w-4" />
                                 </button>
-                            ))}
-                        </div>
-
-                        <div className="mt-5">
-                            <h2 className="text-lg font-bold">
-                                {mode === 'login'
-                                    ? `Entrar como ${selectedAccount?.shortTitle}`
-                                    : `Cadastrar ${selectedAccount?.shortTitle}`}
-                            </h2>
-                            <p className="mt-1 text-sm text-slate-500">
-                                Perfil selecionado: <strong>{roleLabel(role)}</strong>
-                            </p>
-                        </div>
-
-                        <form className="mt-5 grid gap-3" onSubmit={submit}>
-                            {mode === 'register' && (
-                                <>
-                                    <InputField
-                                        value={form.name}
-                                        onChange={(value) => {
-                                            setForm({ ...form, name: value });
-                                        }}
-                                        placeholder="Nome"
-                                    />
-                                    {role === 'owner' && (
-                                        <InputField
-                                            value={form.partyName}
-                                            onChange={(value) => {
-                                                setForm({ ...form, partyName: value });
-                                            }}
-                                            placeholder="Nome da festa"
-                                        />
-                                    )}
-                                    {role === 'platform_admin' && <ReadonlyField value="Operacao da plataforma" />}
-                                    {role === 'guest' && <ReadonlyField value="demo-invite-token" />}
-                                </>
-                            )}
-
-                            <InputField
-                                type="email"
-                                value={form.email}
-                                onChange={(value) => {
-                                    setForm({ ...form, email: value });
-                                }}
-                                placeholder="email@exemplo.com"
-                            />
-                            <PasswordField
-                                value={form.password}
-                                onChange={(value) => {
-                                    setForm({ ...form, password: value });
-                                }}
-                            />
-
-                            {mode === 'register' && (
-                                <>
-                                    <PasswordField
-                                        value={form.passwordConfirmation}
-                                        onChange={(value) => {
-                                            setForm({ ...form, passwordConfirmation: value });
-                                        }}
-                                        placeholder="Confirmar senha"
-                                    />
-                                    <PasswordStrengthMeter strength={passwordStrength} />
-                                    {!passwordsMatch && form.passwordConfirmation.length > 0 && (
-                                        <FeedbackMessage message="As senhas ainda nao conferem." tone="warning" />
-                                    )}
-                                </>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={!canSubmit || auth.isPending}
-                                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-sky-500 px-4 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:pointer-events-none disabled:opacity-50"
-                            >
-                                {auth.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <ArrowRight className="h-4 w-4" />
-                                )}
-                                {mode === 'login' ? 'Entrar na area' : 'Criar e abrir area'}
-                            </button>
-
-                            {auth.isError && <FeedbackMessage message={formatErrorMessage(auth.error)} tone="warning" />}
-                            {statusMessage && <FeedbackMessage message={statusMessage} tone="success" />}
-                        </form>
-
-                        <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                            <div>
-                                <div className="font-semibold text-slate-950">{selectedAccount?.title}</div>
-                                <p className="mt-1">{selectedAccount?.registerHint}</p>
+                                <Link
+                                    to="/"
+                                    className="inline-flex h-12 items-center justify-center rounded-lg border border-[#263247] bg-[#121827]/70 px-5 text-sm font-bold transition hover:scale-[1.03] hover:border-[#22D3EE]/60"
+                                >
+                                    Ver landing
+                                </Link>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-700">
-                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                Senha demo: <strong>password</strong>
-                            </div>
-                            <div className="flex items-center gap-2 text-slate-700">
-                                {role === 'owner' && <PartyPopper className="h-4 w-4 text-sky-500" />}
-                                {role === 'guest' && <TicketCheck className="h-4 w-4 text-emerald-500" />}
-                                {role === 'platform_admin' && <Building2 className="h-4 w-4 text-violet-500" />}
-                                Redireciona para <strong>{destinationFor(role)}</strong>
-                            </div>
+                        </motion.div>
+
+                        <div className="mt-9 grid gap-4 md:grid-cols-3">
+                            {roleOptions.map((account, index) => {
+                                const Icon = account.icon;
+                                const isSelected = account.role === role;
+
+                                return (
+                                    <motion.article
+                                        key={account.role}
+                                        initial={false}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        whileHover={{ y: -6 }}
+                                        className={
+                                            isSelected
+                                                ? 'rounded-2xl border border-[#22D3EE]/70 bg-[#0EA5E9]/15 p-5 shadow-[0_0_0_1px_rgba(34,211,238,0.22),0_24px_70px_rgba(14,165,233,0.18)]'
+                                                : 'rounded-2xl border border-[#263247] bg-[#121827]/80 p-5 shadow-xl backdrop-blur'
+                                        }
+                                    >
+                                        <div
+                                            className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${account.gradient} text-white shadow-lg`}
+                                        >
+                                            <Icon className="h-5 w-5" />
+                                        </div>
+                                        <h2 className="mt-5 text-lg font-bold">{account.title}</h2>
+                                        <p className="mt-3 min-h-24 text-sm leading-7 text-[#CBD5E1]">
+                                            {account.description}
+                                        </p>
+                                        <div className="mt-5 grid grid-cols-2 gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    chooseDemo(account);
+                                                }}
+                                                className={
+                                                    isSelected && mode === 'login'
+                                                        ? 'h-10 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold text-white'
+                                                        : 'h-10 rounded-lg border border-[#263247] bg-[#0B0F1A] text-sm font-bold text-white transition hover:border-[#22D3EE]/60'
+                                                }
+                                            >
+                                                Login
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    chooseRegister(account);
+                                                }}
+                                                className={
+                                                    isSelected && mode === 'register'
+                                                        ? 'h-10 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold text-white'
+                                                        : 'h-10 rounded-lg text-sm font-bold text-[#CBD5E1] transition hover:bg-[#1A1F2E] hover:text-white'
+                                                }
+                                            >
+                                                Cadastro
+                                            </button>
+                                        </div>
+                                    </motion.article>
+                                );
+                            })}
                         </div>
                     </div>
+
+                    <motion.div
+                        initial={false}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ delay: 0.1, duration: 0.45 }}
+                        className="relative"
+                    >
+                        <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-[#8B5CF6]/20 via-[#22D3EE]/10 to-transparent blur-2xl" />
+                        <div className="relative overflow-hidden rounded-2xl border border-[#263247] bg-[#0B0F1A]/90 p-5 shadow-2xl backdrop-blur-xl">
+                            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-[#8B5CF6]/20 blur-2xl" />
+                            <div className="relative">
+                                <div className="flex rounded-xl bg-[#060B1A] p-1">
+                                    {(['login', 'register'] as const).map((item) => (
+                                        <button
+                                            key={item}
+                                            type="button"
+                                            onClick={() => {
+                                                setMode(item);
+                                            }}
+                                            className={
+                                                mode === item
+                                                    ? 'h-11 flex-1 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold text-white shadow-lg'
+                                                    : 'h-11 flex-1 rounded-lg text-sm font-semibold text-[#94A3B8] transition hover:text-white'
+                                            }
+                                        >
+                                            {item === 'login' ? 'Login' : 'Cadastro'}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="mt-6">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#22D3EE]">
+                                        {roleLabel(role)}
+                                    </p>
+                                    <h2 className="mt-2 text-2xl font-extrabold">
+                                        {mode === 'login'
+                                            ? `Entrar como ${selectedAccount?.shortTitle}`
+                                            : `Cadastrar ${selectedAccount?.shortTitle}`}
+                                    </h2>
+                                    <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
+                                        {mode === 'login'
+                                            ? 'Use uma conta demo ou suas credenciais reais.'
+                                            : 'Crie uma conta demo clicavel para explorar o produto.'}
+                                    </p>
+                                </div>
+
+                                <form className="mt-6 grid gap-3" onSubmit={submit}>
+                                    {mode === 'register' && (
+                                        <>
+                                            <InputField
+                                                value={form.name}
+                                                onChange={(value) => {
+                                                    setForm({ ...form, name: value });
+                                                }}
+                                                placeholder="Nome"
+                                            />
+                                            {role === 'owner' && (
+                                                <InputField
+                                                    value={form.partyName}
+                                                    onChange={(value) => {
+                                                        setForm({ ...form, partyName: value });
+                                                    }}
+                                                    placeholder="Nome da festa"
+                                                />
+                                            )}
+                                            {role === 'platform_admin' && <ReadonlyField value="Operacao da plataforma" />}
+                                            {role === 'guest' && <ReadonlyField value="demo-invite-token" />}
+                                        </>
+                                    )}
+
+                                    <InputField
+                                        type="email"
+                                        value={form.email}
+                                        onChange={(value) => {
+                                            setForm({ ...form, email: value });
+                                        }}
+                                        placeholder="email@exemplo.com"
+                                    />
+                                    <PasswordField
+                                        value={form.password}
+                                        onChange={(value) => {
+                                            setForm({ ...form, password: value });
+                                        }}
+                                    />
+
+                                    {mode === 'register' && (
+                                        <>
+                                            <PasswordField
+                                                value={form.passwordConfirmation}
+                                                onChange={(value) => {
+                                                    setForm({ ...form, passwordConfirmation: value });
+                                                }}
+                                                placeholder="Confirmar senha"
+                                            />
+                                            <PasswordStrengthMeter strength={passwordStrength} />
+                                            {!passwordsMatch && form.passwordConfirmation.length > 0 && (
+                                                <FeedbackMessage message="As senhas ainda nao conferem." tone="warning" />
+                                            )}
+                                        </>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={!canSubmit || auth.isPending}
+                                        className="mt-1 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-4 text-sm font-bold text-white shadow-lg shadow-[#0EA5E9]/20 transition hover:scale-[1.02] disabled:pointer-events-none disabled:opacity-50"
+                                    >
+                                        {auth.isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <ArrowRight className="h-4 w-4" />
+                                        )}
+                                        {mode === 'login' ? 'Entrar na area' : 'Criar e abrir area'}
+                                    </button>
+
+                                    {auth.isError && (
+                                        <FeedbackMessage message={formatErrorMessage(auth.error)} tone="warning" />
+                                    )}
+                                    {statusMessage && <FeedbackMessage message={statusMessage} tone="success" />}
+                                </form>
+
+                                <div className="mt-5 grid gap-3 rounded-2xl border border-[#263247] bg-[#121827] p-4 text-sm text-[#CBD5E1]">
+                                    <div>
+                                        <div className="font-semibold text-white">{selectedAccount?.title}</div>
+                                        <p className="mt-1 leading-6 text-[#94A3B8]">{selectedAccount?.registerHint}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+                                        Senha demo: <strong className="text-white">password</strong>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {role === 'owner' && <PartyPopper className="h-4 w-4 text-[#22D3EE]" />}
+                                        {role === 'guest' && <TicketCheck className="h-4 w-4 text-[#22C55E]" />}
+                                        {role === 'platform_admin' && <Building2 className="h-4 w-4 text-[#A78BFA]" />}
+                                        Redireciona para <strong className="text-white">{destinationFor(role)}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
+
+                <section className="relative z-10 grid gap-4 pb-12 md:grid-cols-[0.9fr_1.1fr]">
+                    <PreviewCard role={role} />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {['Permissoes separadas', 'Fluxo demo clicavel'].map((item, index) => (
+                            <motion.article
+                                key={item}
+                                whileHover={{ y: -5 }}
+                                className="rounded-2xl border border-[#263247] bg-[#121827]/80 p-5 shadow-xl backdrop-blur"
+                            >
+                                <CheckCircle2 className="h-5 w-5 text-[#22C55E]" />
+                                <h3 className="mt-4 font-bold">{item}</h3>
+                                <p className="mt-2 text-sm leading-7 text-[#CBD5E1]">
+                                    {index === 0
+                                        ? 'Admin, organizador e convidado entram em areas diferentes.'
+                                        : 'Botoes respondem, sessoes persistem e a navegacao se comporta como produto.'}
+                                </p>
+                            </motion.article>
+                        ))}
+                    </div>
+                </section>
             </section>
         </main>
     );
 }
 
-function BadgeLine() {
+function PreviewCard({ role }: { role: UserRole }) {
+    const labels = {
+        owner: ['Overview', 'Eventos', 'Convidados', 'Templates', 'Check-in'],
+        guest: ['Convite', 'RSVP', 'QR Code', 'Presentes', 'Ajustes'],
+        platform_admin: ['Software', 'Clientes', 'Eventos', 'Suporte', 'Governanca'],
+    }[role];
+
+    const title = {
+        owner: 'Resumo dos seus eventos.',
+        guest: 'Seu convite em um so lugar.',
+        platform_admin: 'Saude da plataforma.',
+    }[role];
+
     return (
-        <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-medium text-white">
-            <Sparkles className="mr-2 h-3.5 w-3.5" />
-            Demo interativa
-        </span>
+        <motion.article
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            className="overflow-hidden rounded-2xl border border-[#263247] bg-[#0B0F1A]/85 p-4 shadow-2xl backdrop-blur-xl"
+        >
+            <div className="grid gap-4 lg:grid-cols-[170px_1fr]">
+                <aside className="hidden rounded-xl border border-[#263247] bg-[#060B1A]/70 p-3 lg:block">
+                    <div className="mb-5 flex items-center gap-2 text-xs font-bold">
+                        <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
+                        Invitely
+                    </div>
+                    {labels.map((item, index) => (
+                        <div
+                            key={item}
+                            className={
+                                index === 0
+                                    ? 'mb-1 rounded-lg bg-[#8B5CF6]/25 px-3 py-2 text-xs text-white'
+                                    : 'mb-1 rounded-lg px-3 py-2 text-xs text-[#94A3B8]'
+                            }
+                        >
+                            {item}
+                        </div>
+                    ))}
+                </aside>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-xs text-[#94A3B8]">Preview da area</p>
+                            <h2 className="text-lg font-bold">{title}</h2>
+                        </div>
+                        <span className="rounded-lg bg-[#8B5CF6] px-3 py-2 text-xs font-bold">Demo</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        {previewMetrics.map((metric) => (
+                            <div key={metric.label} className="rounded-xl border border-[#263247] bg-[#121827] p-3">
+                                <metric.icon className="h-4 w-4 text-[#22D3EE]" />
+                                <div className="mt-3 text-2xl font-bold">{metric.value}</div>
+                                <div className="text-xs text-[#94A3B8]">{metric.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="rounded-xl border border-[#263247] bg-[#121827] p-4">
+                        <div className="mb-4 flex items-center justify-between text-sm">
+                            <span>Atividade dos ultimos 7 dias</span>
+                            <span className="rounded-lg bg-[#1A1F2E] px-2 py-1 text-xs text-[#CBD5E1]">312 hoje</span>
+                        </div>
+                        <MiniLineChart />
+                    </div>
+                </div>
+            </div>
+        </motion.article>
+    );
+}
+
+function MiniLineChart() {
+    const points = '0,72 72,48 144,60 216,24 288,44 360,32 432,22';
+
+    return (
+        <svg viewBox="0 0 432 96" className="h-28 w-full overflow-visible">
+            <defs>
+                <linearGradient id="authLine" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stopColor="#22D3EE" />
+                    <stop offset="100%" stopColor="#8B5CF6" />
+                </linearGradient>
+                <linearGradient id="authArea" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
+                </linearGradient>
+            </defs>
+            <polyline points={`${points} 432,96 0,96`} fill="url(#authArea)" opacity="0.8" />
+            <motion.polyline
+                points={points}
+                fill="none"
+                stroke="url(#authLine)"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+            />
+            {[
+                [0, 72],
+                [72, 48],
+                [144, 60],
+                [216, 24],
+                [288, 44],
+                [360, 32],
+                [432, 22],
+            ].map(([x, y]) => (
+                <circle key={`${String(x)}-${String(y)}`} cx={x} cy={y} r="4" fill="#22D3EE" />
+            ))}
+        </svg>
     );
 }
 
@@ -547,7 +750,7 @@ function InputField({
 }) {
     return (
         <input
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+            className="h-12 rounded-xl border border-[#263247] bg-[#060B1A] px-4 text-sm text-white outline-none transition placeholder:text-[#64748B] focus:border-[#22D3EE] focus:ring-2 focus:ring-[#8B5CF6]/30"
             type={type}
             value={value}
             onChange={(event) => {
@@ -561,7 +764,7 @@ function InputField({
 function ReadonlyField({ value }: { value: string }) {
     return (
         <input
-            className="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500"
+            className="h-12 rounded-xl border border-[#263247] bg-[#121827] px-4 text-sm text-[#94A3B8]"
             value={value}
             readOnly
         />
@@ -582,7 +785,7 @@ function PasswordField({
     return (
         <span className="relative block">
             <input
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-950 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+                className="h-12 w-full rounded-xl border border-[#263247] bg-[#060B1A] px-4 pr-12 text-sm text-white outline-none transition placeholder:text-[#64748B] focus:border-[#22D3EE] focus:ring-2 focus:ring-[#8B5CF6]/30"
                 type={isVisible ? 'text' : 'password'}
                 value={value}
                 onChange={(event) => {
@@ -595,7 +798,7 @@ function PasswordField({
                 onClick={() => {
                     setIsVisible((current) => !current);
                 }}
-                className="absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded text-slate-500 hover:bg-slate-100"
+                className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-[#94A3B8] transition hover:bg-[#1A1F2E] hover:text-white"
                 aria-label={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
             >
                 {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -623,18 +826,18 @@ function getPasswordStrength(password: string) {
 
 function getStrengthColor(score: number): string {
     if (score <= 1) {
-        return '#ef4444';
+        return '#EF4444';
     }
 
     if (score <= 3) {
-        return '#f59e0b';
+        return '#F59E0B';
     }
 
     if (score === 4) {
-        return '#0ea5e9';
+        return '#22D3EE';
     }
 
-    return '#22c55e';
+    return '#22C55E';
 }
 
 function getStrengthLabel(score: number): string {
@@ -657,12 +860,12 @@ function PasswordStrengthMeter({ strength }: { strength: ReturnType<typeof getPa
     const color = getStrengthColor(strength.score);
 
     return (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="rounded-xl border border-[#263247] bg-[#060B1A] p-3">
             <div className="flex items-center justify-between gap-3 text-xs font-semibold">
-                <span className="text-slate-500">Seguranca da senha</span>
+                <span className="text-[#94A3B8]">Seguranca da senha</span>
                 <span style={{ color }}>{getStrengthLabel(strength.score)}</span>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#1A1F2E]">
                 <motion.div
                     className="h-full rounded-full"
                     style={{
@@ -672,10 +875,15 @@ function PasswordStrengthMeter({ strength }: { strength: ReturnType<typeof getPa
                     transition={{ duration: 0.25 }}
                 />
             </div>
-            <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 text-xs text-[#94A3B8] sm:grid-cols-2">
                 {strength.checks.map((check) => (
-                    <div key={check.label} className={check.passed ? 'flex items-center gap-2 text-emerald-700' : 'flex items-center gap-2'}>
-                        <CheckCircle2 className={check.passed ? 'h-3.5 w-3.5 text-emerald-500' : 'h-3.5 w-3.5 text-slate-300'} />
+                    <div
+                        key={check.label}
+                        className={check.passed ? 'flex items-center gap-2 text-[#BBF7D0]' : 'flex items-center gap-2'}
+                    >
+                        <CheckCircle2
+                            className={check.passed ? 'h-3.5 w-3.5 text-[#22C55E]' : 'h-3.5 w-3.5 text-[#475569]'}
+                        />
                         {check.label}
                     </div>
                 ))}
@@ -691,8 +899,8 @@ function FeedbackMessage({ message, tone }: { message: string; tone: 'success' |
         <div
             className={
                 isSuccess
-                    ? 'rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700'
-                    : 'rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800'
+                    ? 'rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/10 px-3 py-2 text-sm text-[#BBF7D0]'
+                    : 'rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-3 py-2 text-sm text-[#FDE68A]'
             }
         >
             <div className="flex gap-2">

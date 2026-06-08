@@ -14,6 +14,7 @@ import {
     LifeBuoy,
     Link2,
     LogOut,
+    Mail,
     MapPin,
     Megaphone,
     QrCode,
@@ -30,7 +31,7 @@ import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthUser, UserRole, clearSession, getStoredSession, roleLabel } from '../../auth/session';
-import { CreateEventForm } from './CreateEventForm';
+import { CreateEventForm, CreatedEventSummary } from './CreateEventForm';
 
 type DashboardView =
     | 'overview'
@@ -94,7 +95,7 @@ const profileCopy: Record<
     },
 };
 
-const eventCards = [
+const initialEventCards: CreatedEventSummary[] = [
     {
         title: 'Invitely Launch Night',
         date: '23 jul 2026 - 19:00',
@@ -128,6 +129,8 @@ const guests = [
     { name: 'Lucas Convidado', email: 'guest@invitely.dev', status: 'Confirmado' },
     { name: 'Ana Ribeiro', email: 'ana@example.com', status: 'Pendente' },
     { name: 'Felipe Costa', email: 'felipe@example.com', status: 'Check-in feito' },
+    { name: 'Bianca Torres', email: 'bianca@example.com', status: 'Pendente' },
+    { name: 'Rafael Lima', email: 'rafael@example.com', status: 'Pendente' },
 ];
 
 const tenants = [
@@ -215,6 +218,8 @@ export function AdminDashboard() {
     const user = session?.user;
     const [view, setView] = useState<DashboardView>('overview');
     const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+    const [isSendingReminder, setIsSendingReminder] = useState(false);
+    const [events, setEvents] = useState<CreatedEventSummary[]>(initialEventCards);
     const [toast, setToast] = useState('Dashboard carregado. Explore os modulos do produto.');
 
     const expectedRole = expectedRoleForPath(location.pathname);
@@ -243,7 +248,14 @@ export function AdminDashboard() {
     function runAction(item: ActionItem) {
         if (user?.role === 'owner' && item.label === 'Criar evento') {
             setIsCreatingEvent(true);
+            setIsSendingReminder(false);
             setView('events');
+        }
+
+        if (user?.role === 'owner' && item.label === 'Enviar lembrete') {
+            setIsSendingReminder(true);
+            setIsCreatingEvent(false);
+            setView('guests');
         }
 
         notify(item.message);
@@ -274,6 +286,7 @@ export function AdminDashboard() {
                                     onClick={() => {
                                         setView(item.view);
                                         setIsCreatingEvent(false);
+                                        setIsSendingReminder(false);
                                         notify(`${item.label} aberto.`);
                                     }}
                                     className={
@@ -352,10 +365,26 @@ export function AdminDashboard() {
                                     setIsCreatingEvent(false);
                                     notify('Criacao de evento cancelada.');
                                 }}
+                                onCreated={(event) => {
+                                    setEvents((current) => [event, ...current]);
+                                    setIsCreatingEvent(false);
+                                    notify(`${event.title} criado e adicionado ao painel.`);
+                                }}
                             />
                         </div>
+                    ) : isSendingReminder ? (
+                        <ReminderPanel
+                            onCancel={() => {
+                                setIsSendingReminder(false);
+                                notify('Envio de lembrete cancelado.');
+                            }}
+                            onSent={(count) => {
+                                setIsSendingReminder(false);
+                                notify(`${String(count)} lembrete(s) preparados para envio em modo demo.`);
+                            }}
+                        />
                     ) : (
-                        <DashboardContent role={user.role} view={view} notify={notify} />
+                        <DashboardContent role={user.role} view={view} notify={notify} events={events} />
                     )}
                 </section>
             </div>
@@ -367,17 +396,19 @@ function DashboardContent({
     role,
     view,
     notify,
+    events,
 }: {
     role: UserRole;
     view: DashboardView;
     notify: (message: string) => void;
+    events: CreatedEventSummary[];
 }) {
     if (view === 'overview') {
         return <Overview role={role} notify={notify} />;
     }
 
     if (view === 'events') {
-        return <EventsView role={role} notify={notify} />;
+        return <EventsView role={role} notify={notify} events={events} />;
     }
 
     if (view === 'guests') {
@@ -492,10 +523,18 @@ function Overview({ role, notify }: { role: UserRole; notify: (message: string) 
     );
 }
 
-function EventsView({ role, notify }: { role: UserRole; notify: (message: string) => void }) {
+function EventsView({
+    role,
+    notify,
+    events,
+}: {
+    role: UserRole;
+    notify: (message: string) => void;
+    events: CreatedEventSummary[];
+}) {
     return (
         <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {eventCards.map((event) => (
+            {events.map((event) => (
                 <motion.article
                     key={event.title}
                     whileHover={{ y: -6 }}
@@ -527,6 +566,192 @@ function EventsView({ role, notify }: { role: UserRole; notify: (message: string
                 </motion.article>
             ))}
         </section>
+    );
+}
+
+function ReminderPanel({
+    onCancel,
+    onSent,
+}: {
+    onCancel: () => void;
+    onSent: (count: number) => void;
+}) {
+    const pendingGuests = guests.filter((guest) => guest.status === 'Pendente');
+    const [selectedEmails, setSelectedEmails] = useState<string[]>(pendingGuests.map((guest) => guest.email));
+    const [customEmail, setCustomEmail] = useState('');
+    const [subject, setSubject] = useState('Lembrete: confirme sua presenca no evento');
+    const [message, setMessage] = useState(
+        'Oi! Passando para lembrar voce de confirmar presenca. Assim conseguimos organizar tudo com carinho.',
+    );
+    const [isSending, setIsSending] = useState(false);
+
+    function toggleEmail(email: string) {
+        setSelectedEmails((current) =>
+            current.includes(email) ? current.filter((item) => item !== email) : [...current, email],
+        );
+    }
+
+    function addCustomEmail() {
+        const normalizedEmail = customEmail.trim().toLowerCase();
+
+        if (!normalizedEmail.includes('@') || selectedEmails.includes(normalizedEmail)) {
+            return;
+        }
+
+        setSelectedEmails((current) => [...current, normalizedEmail]);
+        setCustomEmail('');
+    }
+
+    function sendReminder() {
+        if (selectedEmails.length === 0) {
+            return;
+        }
+
+        setIsSending(true);
+        window.setTimeout(() => {
+            setIsSending(false);
+            onSent(selectedEmails.length);
+        }, 700);
+    }
+
+    return (
+        <motion.section
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
+        >
+            <div className="rounded-3xl border border-[#263247] bg-[#121827]/90 p-6 shadow-2xl">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-[#22D3EE]">Campanha de lembrete</p>
+                        <h2 className="mt-2 text-2xl font-bold">Enviar e-mails para convidados</h2>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#94A3B8]">
+                            Selecione quem ainda precisa confirmar, ajuste o texto e simule o disparo. Em producao isso
+                            pode virar uma fila de e-mails real.
+                        </p>
+                    </div>
+                    <ActionButton variant="secondary" onClick={onCancel}>
+                        Cancelar
+                    </ActionButton>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+                    <Panel title="Destinatarios">
+                        <div className="mb-4 flex flex-wrap gap-2">
+                            <ActionButton
+                                variant="secondary"
+                                onClick={() => {
+                                    setSelectedEmails(guests.map((guest) => guest.email));
+                                }}
+                            >
+                                Selecionar todos
+                            </ActionButton>
+                            <ActionButton
+                                variant="secondary"
+                                onClick={() => {
+                                    setSelectedEmails(pendingGuests.map((guest) => guest.email));
+                                }}
+                            >
+                                Apenas pendentes
+                            </ActionButton>
+                        </div>
+
+                        <div className="grid gap-3">
+                            {guests.map((guest) => {
+                                const isSelected = selectedEmails.includes(guest.email);
+
+                                return (
+                                    <button
+                                        key={guest.email}
+                                        type="button"
+                                        onClick={() => {
+                                            toggleEmail(guest.email);
+                                        }}
+                                        className={
+                                            isSelected
+                                                ? 'flex items-center justify-between gap-3 rounded-2xl border border-[#22D3EE]/60 bg-[#0EA5E9]/15 p-4 text-left'
+                                                : 'flex items-center justify-between gap-3 rounded-2xl border border-[#263247] bg-[#0B0F1A] p-4 text-left transition hover:border-[#22D3EE]/40'
+                                        }
+                                    >
+                                        <span>
+                                            <span className="block text-sm font-semibold text-white">{guest.name}</span>
+                                            <span className="mt-1 block text-xs text-[#94A3B8]">{guest.email}</span>
+                                        </span>
+                                        <StatusChip status={guest.status} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-4 flex gap-2">
+                            <input
+                                value={customEmail}
+                                onChange={(event) => {
+                                    setCustomEmail(event.target.value);
+                                }}
+                                placeholder="adicionar@email.com"
+                                className="h-11 min-w-0 flex-1 rounded-xl border border-[#263247] bg-[#060B1A] px-4 text-sm text-white outline-none transition focus:border-[#22D3EE]"
+                            />
+                            <ActionButton onClick={addCustomEmail}>Adicionar</ActionButton>
+                        </div>
+                    </Panel>
+
+                    <Panel title="Mensagem">
+                        <div className="grid gap-4">
+                            <label>
+                                <span className="mb-2 block text-sm text-[#CBD5E1]">Assunto</span>
+                                <input
+                                    value={subject}
+                                    onChange={(event) => {
+                                        setSubject(event.target.value);
+                                    }}
+                                    className="h-12 w-full rounded-xl border border-[#263247] bg-[#060B1A] px-4 text-sm text-white outline-none transition focus:border-[#22D3EE]"
+                                />
+                            </label>
+                            <label>
+                                <span className="mb-2 block text-sm text-[#CBD5E1]">Mensagem</span>
+                                <textarea
+                                    value={message}
+                                    onChange={(event) => {
+                                        setMessage(event.target.value);
+                                    }}
+                                    rows={7}
+                                    className="w-full resize-none rounded-xl border border-[#263247] bg-[#060B1A] px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-[#22D3EE]"
+                                />
+                            </label>
+                        </div>
+                    </Panel>
+                </div>
+            </div>
+
+            <aside className="rounded-3xl border border-[#263247] bg-[#0B0F1A]/90 p-5 shadow-2xl">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#8B5CF6]/20">
+                    <Mail className="h-5 w-5 text-[#A78BFA]" />
+                </div>
+                <h3 className="mt-5 text-xl font-bold">Resumo do envio</h3>
+                <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
+                    {String(selectedEmails.length)} destinatario(s) selecionado(s). O envio aqui e simulado, mas a
+                    experiencia ja fica pronta para plugar uma fila real.
+                </p>
+                <div className="mt-5 rounded-2xl border border-[#263247] bg-[#121827] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#94A3B8]">Assunto</p>
+                    <p className="mt-2 text-sm text-white">{subject}</p>
+                </div>
+                <ActionButton className="mt-5 w-full" onClick={sendReminder}>
+                    {isSending ? (
+                        <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            Enviando...
+                        </>
+                    ) : (
+                        <>
+                            <Send className="h-4 w-4" />
+                            Enviar lembretes
+                        </>
+                    )}
+                </ActionButton>
+            </aside>
+        </motion.section>
     );
 }
 

@@ -54,3 +54,32 @@ textarea,
 select {
     letter-spacing: 0;
 }
+
+.field-control {
+    height: 2.75rem;
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #263247;
+    background: #0b0f1a;
+    padding-inline: 1rem;
+    color: #fff;
+    outline: none;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.field-control::placeholder {
+    color: #64748b;
+}
+
+.field-control:focus {
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28);
+}
+
+.field-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
