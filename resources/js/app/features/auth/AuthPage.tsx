@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import { SyntheticEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthSession, UserRole, roleLabel, storeSession } from '../../auth/session';
+import { apiUrl } from '../../../lib/api';
 
 type AuthMode = 'login' | 'register';
 
@@ -56,7 +57,7 @@ export function AuthPage() {
 
     const auth = useMutation({
         mutationFn: async () => {
-            const endpoint = mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register';
+            const endpoint = apiUrl(mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register');
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

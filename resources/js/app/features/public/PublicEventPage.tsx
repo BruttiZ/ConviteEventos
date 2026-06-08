@@ -27,6 +27,7 @@ import type { ReactNode } from 'react';
 import { SyntheticEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getStoredSession } from '../../auth/session';
+import { apiUrl } from '../../../lib/api';
 import { PublicEvent } from './types';
 
 type RsvpStatus = 'accepted' | 'declined';
@@ -125,7 +126,7 @@ export function PublicEventPage() {
     const eventQuery = useQuery({
         queryKey: ['public-event', slug],
         queryFn: async () => {
-            const response = await fetch(`/api/v1/events/${slug}`);
+            const response = await fetch(apiUrl(`/api/v1/events/${slug}`));
             if (!response.ok) {
                 return demoEvent;
             }
@@ -155,7 +156,7 @@ export function PublicEventPage() {
 
     const rsvp = useMutation({
         mutationFn: async (status: RsvpStatus) => {
-            const response = await fetch(`/api/v1/events/${event.slug}/rsvp`, {
+            const response = await fetch(apiUrl(`/api/v1/events/${event.slug}/rsvp`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({

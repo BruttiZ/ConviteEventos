@@ -13,6 +13,7 @@
 /.zed
 /auth.json
 /bootstrap/cache/*.php
+/dist
 /invitely
 /node_modules
 /public/build

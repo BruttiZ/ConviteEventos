@@ -7,6 +7,7 @@
 - Redesenha o convite público com palco visual, RSVP reativo, etapas, feedback de confirmação e QR Code.
 - Atualiza login/cadastro para a nova identidade visual.
 - Atualiza README e documentação frontend com a nova direção visual.
+- Adiciona build estático para Vercel sem quebrar o fluxo Laravel/Docker.
 
 Todas as mudanças relevantes deste projeto serão documentadas neste arquivo.
 

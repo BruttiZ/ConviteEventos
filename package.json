@@ -5,16 +5,22 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "build:laravel": "vite build",
+        "build:vercel": "vite build --config vite.vercel.config.js",
         "dev": "vite",
-        "format": "prettier --write \"resources/**/*.{css,js,jsx,ts,tsx}\" \"*.{js,json,md}\" \"docs/**/*.md\"",
-        "format:check": "prettier --check \"resources/**/*.{css,js,jsx,ts,tsx}\" \"*.{js,json,md}\" \"docs/**/*.md\"",
-        "lint": "eslint \"resources/js/**/*.{ts,tsx}\" --max-warnings=0",
-        "lint:fix": "eslint \"resources/js/**/*.{ts,tsx}\" --fix",
+        "format": "prettier --ignore-unknown --write \"resources/**/*.{css,js,jsx,ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"vercel-public/**/*\" \"*.{js,json,md}\" \"docs/**/*.md\"",
+        "format:check": "prettier --ignore-unknown --check \"resources/**/*.{css,js,jsx,ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"vercel-public/**/*\" \"*.{js,json,md}\" \"docs/**/*.md\"",
+        "lint": "eslint \"resources/js/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" --max-warnings=0",
+        "lint:fix": "eslint \"resources/js/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" --fix",
         "prepare": "husky",
         "typecheck": "tsc --noEmit"
     },
     "lint-staged": {
         "resources/**/*.{ts,tsx}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "lib/**/*.{ts,tsx}": [
             "eslint --fix",
             "prettier --write"
         ],
@@ -31,6 +37,7 @@
     "dependencies": {
         "@hookform/resolvers": "^5.2.1",
         "@radix-ui/react-slot": "^1.2.3",
+        "@supabase/supabase-js": "^2.108.0",
         "@tanstack/react-query": "^5.85.5",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

@@ -88,6 +88,7 @@ docker compose exec node npm run lint
 docker compose exec node npm run format:check
 docker compose exec node npm run typecheck
 docker compose exec node npm run build
+npm run build:vercel
 ```
 
 ## Arquitetura
@@ -116,6 +117,8 @@ O frontend é organizado por features:
 5. Explore o dashboard, os cards, o check-in e o convite público.
 
 No Docker local, o React é servido pelo build gerado em `public/build` através do Nginx. O service worker é desativado fora de produção para evitar JavaScript antigo em cache.
+
+Para publicar apenas o frontend na Vercel, use `npm run build:vercel`, Output Directory `dist` e configure `VITE_API_URL` apontando para o backend Laravel publicado. Veja [docs/production.md](docs/production.md).
 
 ## Roadmap
 

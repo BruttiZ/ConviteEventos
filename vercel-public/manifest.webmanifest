@@ -1,0 +1,30 @@
+{
+    "name": "Invitely",
+    "short_name": "Invitely",
+    "description": "Convites digitais premium com RSVP, QR Code e painel de eventos.",
+    "start_url": "/events/invitely-launch-night",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#020617",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/pwa-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Evento demo",
+            "short_name": "Demo",
+            "url": "/events/invitely-launch-night"
+        },
+        {
+            "name": "Admin",
+            "short_name": "Admin",
+            "url": "/admin"
+        }
+    ]
+}

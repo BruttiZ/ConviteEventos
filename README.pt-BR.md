@@ -81,7 +81,10 @@ docker compose exec node npm run lint
 docker compose exec node npm run format:check
 docker compose exec node npm run typecheck
 docker compose exec node npm run build
+npm run build:vercel
 ```
+
+Para publicar apenas o frontend na Vercel, use `npm run build:vercel`, Output Directory `dist` e configure `VITE_API_URL` apontando para o backend Laravel publicado. Veja [docs/production.md](docs/production.md).
 
 Para recriar o banco do zero:
 
