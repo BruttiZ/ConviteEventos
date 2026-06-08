@@ -19,7 +19,7 @@ resources/js/
 
 - `/`: landing page SaaS com hero, mockup de dashboard e benefícios.
 - `/login`: tela de login/cadastro com tres perfis de teste.
-- `/events/invitely-launch-night`: convite publico com RSVP, compartilhamento, tema e QR Code.
+- `/events/invitely-launch-night`: convite publico com RSVP reativo, compartilhamento, tema, feedback visual e QR Code.
 - `/admin`: dashboard interativo que muda a navegacao conforme o papel do usuario.
 
 ## Design system visual
@@ -68,6 +68,7 @@ A landing publica prioriza celulares:
 - navegacao fixa inferior para confirmacao e compartilhamento;
 - areas tocaveis com altura estavel;
 - feedback visual para sucesso, erro e envio de RSVP;
+- card de confirmacao com etapas de preenchimento, validacao e QR Code;
 - galerias e cards fluidos entre celular, tablet e desktop;
 - service worker desabilitado em ambiente local para evitar cache antigo.
 

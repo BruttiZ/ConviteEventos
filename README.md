@@ -33,7 +33,7 @@ O redesign atual usa uma estética dark premium inspirada em Linear, Stripe, Ver
 ## Funcionalidades atuais
 
 - Landing page SaaS moderna com hero, mockup flutuante de dashboard e cards de benefícios.
-- Convite público premium com imagem de fundo, overlay escuro, CTA, countdown, galeria, QR Code e formulário RSVP.
+- Convite público premium com palco visual, RSVP reativo, feedback de confirmação, countdown, galeria e QR Code.
 - Formulário de confirmação com nome, e-mail, acompanhantes com botões `+` e `-`, mensagem opcional, confirmar e recusar.
 - Login/cadastro com perfis demo para dono do evento, convidado e admin da plataforma.
 - Dashboard responsivo com sidebar no desktop, bottom navigation no mobile, métricas, gráfico de linha, distribuição de RSVP e cards de eventos.

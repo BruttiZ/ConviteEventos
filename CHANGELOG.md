@@ -4,7 +4,7 @@
 
 - Redesenha a landing page como uma experiência SaaS premium em dark mode.
 - Redesenha o dashboard com sidebar desktop, navegação mobile, métricas, gráfico de linha, distribuição de RSVP e cards de eventos.
-- Redesenha o convite público com imagem de fundo, overlay escuro, countdown e formulário moderno de RSVP.
+- Redesenha o convite público com palco visual, RSVP reativo, etapas, feedback de confirmação e QR Code.
 - Atualiza login/cadastro para a nova identidade visual.
 - Atualiza README e documentação frontend com a nova direção visual.
 
