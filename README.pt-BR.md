@@ -72,6 +72,7 @@ O container `app` prepara o Laravel automaticamente: gera `APP_KEY` quando neces
 ```bash
 docker compose ps
 docker compose logs -f app
+docker compose exec app php artisan db:seed --force
 docker compose exec app php artisan route:list --path=api
 docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test

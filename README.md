@@ -80,6 +80,7 @@ Todas usam a senha `password`.
 ```bash
 docker compose ps
 docker compose logs -f app
+docker compose exec app php artisan db:seed --force
 docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M

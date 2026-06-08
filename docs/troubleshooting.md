@@ -31,6 +31,21 @@ Rode o build pelo container Node:
 docker compose exec node npm run build
 ```
 
+## Login demo não entra
+
+As contas demo são criadas pelos seeders. Se o banco local estiver sem usuários ou se o volume do Postgres foi reaproveitado antes dos seeders, rode:
+
+```bash
+docker compose exec app php artisan db:seed --force
+docker compose exec app php artisan cache:clear
+```
+
+Depois acesse `http://localhost:8080/login` com:
+
+- `host@invitely.dev` / `password`
+- `guest@invitely.dev` / `password`
+- `admin@invitely.dev` / `password`
+
 ## Resetar tudo
 
 ```bash
