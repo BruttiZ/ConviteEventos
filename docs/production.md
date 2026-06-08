@@ -1,6 +1,6 @@
-# Deploy em produção
+# Deploy em producao
 
-Este projeto é Laravel + React/Vite. Isso significa que existem dois caminhos de produção.
+Este projeto e Laravel + React/Vite. Isso significa que existem dois caminhos de producao.
 
 ## Caminho recomendado para SaaS completo
 
@@ -16,7 +16,7 @@ Suba o Laravel como backend completo em uma plataforma que rode PHP, filas e ban
 Nesse modelo, o Laravel serve:
 
 - API `/api/v1`;
-- autenticação Sanctum;
+- autenticacao Sanctum;
 - migrations e seeders;
 - filas;
 - cache;
@@ -33,15 +33,16 @@ docker compose exec node npm run build
 
 ## Caminho Vercel
 
-A Vercel é excelente para o frontend estático React/Vite. Ela não executa este backend Laravel completo com PHP-FPM, filas e migrations.
+A Vercel e excelente para o frontend estatico React/Vite. Ela nao executa este backend Laravel completo com PHP-FPM, filas e migrations.
 
-Por isso, no deploy Vercel deste repositório:
+Por isso, no deploy Vercel deste repositorio:
 
 - a Vercel publica somente a SPA React;
 - o Laravel precisa estar publicado em outro lugar;
-- o frontend deve apontar para a URL pública do backend usando `VITE_API_URL`.
+- o frontend deve apontar para a URL publica do backend usando `VITE_API_URL`, quando a API Laravel estiver publicada;
+- o login/cadastro de portfolio usa Supabase Auth com variaveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
-## Configuração na Vercel
+## Configuracao na Vercel
 
 Use:
 
@@ -52,13 +53,13 @@ Use:
 | Build Command    | `npm run build:vercel` |
 | Output Directory | `dist`                 |
 
-O arquivo `vercel.json` já define:
+O arquivo `vercel.json` ja define:
 
 - `buildCommand`;
 - `outputDirectory`;
 - rewrite de SPA para `index.html`.
 
-## Variáveis na Vercel
+## Variaveis na Vercel
 
 Configure:
 
@@ -66,20 +67,39 @@ Configure:
 VITE_API_URL=https://sua-api-laravel.com
 VITE_APP_NAME=Invitely
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anon
+VITE_SUPABASE_ANON_KEY=sua-chave-publicavel
 ```
 
 `VITE_API_URL` e necessario quando a SPA publicada na Vercel precisa consumir uma API Laravel publicada separadamente.
 
-`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sao necessarios para login e cadastro reais com Supabase Auth.
+`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sao necessarios para login e cadastro reais com Supabase Auth. Use a chave publica/publishable do Supabase, nunca a `service_role`.
 
 ## Supabase Auth
 
-No Supabase, habilite autenticação por e-mail/senha em `Authentication > Providers > Email`.
+No Supabase, habilite autenticacao por e-mail/senha em `Authentication > Providers > Email`.
+
+Configure tambem `Authentication > URL Configuration`:
+
+| Campo         | Valor recomendado                                                   |
+| ------------- | ------------------------------------------------------------------- |
+| Site URL      | URL publica da Vercel, por exemplo `https://seu-projeto.vercel.app` |
+| Redirect URLs | URL publica da Vercel e URLs locais usadas no desenvolvimento       |
+
+Exemplo de Redirect URLs:
+
+```text
+https://seu-projeto.vercel.app/**
+http://localhost:8080/**
+http://localhost:4173/**
+```
+
+O cadastro envia `emailRedirectTo` usando a origem atual do app. Em producao, isso faz o e-mail voltar para a URL da Vercel. Em desenvolvimento, volta para a porta local que estiver aberta.
+
+Se o navegador mostrar `otp_expired`, o link de confirmacao expirou ou ja foi usado. Gere um novo cadastro, solicite um novo e-mail de confirmacao no Supabase ou desative temporariamente a confirmacao de e-mail apenas para testes locais.
 
 O cadastro publico salva no metadata:
 
-- `name`: nome informado no formulario.
+- `name`: nome informado no formulario;
 - `role`: `owner` ou `guest`.
 
 Para testar administracao da plataforma, edite o metadata do usuario no Supabase para:
@@ -121,13 +141,13 @@ dist/
 
 ## Por que o 404 acontecia
 
-O build Laravel padrão gera assets em:
+O build Laravel padrao gera assets em:
 
 ```text
 public/build
 ```
 
-Esse diretório é correto para o Laravel, mas não é uma SPA Vite completa para a Vercel.
+Esse diretorio e correto para o Laravel, mas nao e uma SPA Vite completa para a Vercel.
 
 Para a Vercel abrir uma SPA, ela precisa encontrar:
 
@@ -135,9 +155,9 @@ Para a Vercel abrir uma SPA, ela precisa encontrar:
 dist/index.html
 ```
 
-E para rotas como `/login`, `/admin` e `/events/invitely-launch-night` funcionarem ao recarregar a página, a Vercel precisa redirecionar essas rotas para `index.html`. Isso é feito pelo `vercel.json`.
+E para rotas como `/login`, `/admin` e `/events/invitely-launch-night` funcionarem ao recarregar a pagina, a Vercel precisa redirecionar essas rotas para `index.html`. Isso e feito pelo `vercel.json`.
 
-## Checklist rápido
+## Checklist rapido
 
 Antes de fazer deploy:
 
@@ -159,4 +179,4 @@ No Linux/macOS:
 ls -la dist
 ```
 
-Se não existir `dist/index.html`, a Vercel vai continuar retornando `404 NOT_FOUND`.
+Se nao existir `dist/index.html`, a Vercel vai continuar retornando `404 NOT_FOUND`.

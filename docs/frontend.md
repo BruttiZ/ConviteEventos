@@ -53,6 +53,17 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anon
 
 O cadastro publico permite os perfis `Organizador` e `Convidado`. O papel `platform_admin` deve ser definido manualmente no Supabase metadata quando for necessario testar administracao da plataforma.
 
+A tela de cadastro exige senha forte antes de chamar o Supabase:
+
+- letra minuscula;
+- letra maiuscula;
+- numero;
+- caractere especial;
+- minimo de 8 caracteres;
+- confirmacao de senha igual ao primeiro campo.
+
+O formulario tambem oferece botao de visibilidade de senha e medidor visual de seguranca. Quando a confirmacao de e-mail esta ativa no Supabase, o cadastro envia `emailRedirectTo` com a origem atual do app para evitar links apontando para uma porta local incorreta.
+
 ## Principios
 
 - Mobile-first.

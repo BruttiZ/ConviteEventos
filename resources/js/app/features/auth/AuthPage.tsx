@@ -1,14 +1,36 @@
 import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowRight, CalendarDays, Loader2, Mail, ShieldCheck, Sparkles, TicketCheck } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowRight,
+    CalendarDays,
+    CheckCircle2,
+    Eye,
+    EyeOff,
+    Loader2,
+    Mail,
+    ShieldCheck,
+    Sparkles,
+    TicketCheck,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { SyntheticEvent, useState } from 'react';
+import { SyntheticEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthSession, UserRole, storeSession } from '../../auth/session';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
 
 type AuthMode = 'login' | 'register';
 type PublicRole = Exclude<UserRole, 'platform_admin'>;
+
+type AuthMutationResult =
+    | {
+          kind: 'authenticated';
+          session: AuthSession;
+      }
+    | {
+          kind: 'pending_confirmation';
+          message: string;
+      };
 
 const roleOptions: {
     role: PublicRole;
@@ -34,23 +56,45 @@ export function AuthPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<AuthMode>('login');
     const [role, setRole] = useState<PublicRole>('owner');
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [confirmationError, setConfirmationError] = useState<string | null>(() => getConfirmationErrorFromHash());
     const [form, setForm] = useState({
         name: '',
         email: '',
         password: '',
+        passwordConfirmation: '',
     });
 
+    const passwordStrength = useMemo(() => getPasswordStrength(form.password), [form.password]);
+    const passwordsMatch = form.password.length > 0 && form.password === form.passwordConfirmation;
+    const isRegisterValid =
+        form.name.trim().length >= 2 && form.email.includes('@') && passwordStrength.isStrong && passwordsMatch;
+    const canSubmit = mode === 'login' ? form.email.includes('@') && form.password.length >= 6 : isRegisterValid;
+
+    useEffect(() => {
+        if (confirmationError) {
+            window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+        }
+    }, [confirmationError]);
+
     const auth = useMutation({
-        mutationFn: async () => {
+        mutationFn: async (): Promise<AuthMutationResult> => {
             const supabase = getSupabaseClient();
+            setStatusMessage(null);
+            setConfirmationError(null);
 
             if (mode === 'register') {
+                if (!isRegisterValid) {
+                    throw new Error('Preencha o cadastro com uma senha forte e confirme a senha corretamente.');
+                }
+
                 const { data, error } = await supabase.auth.signUp({
                     email: form.email,
                     password: form.password,
                     options: {
+                        emailRedirectTo: `${window.location.origin}/login`,
                         data: {
-                            name: form.name,
+                            name: form.name.trim(),
                             role,
                         },
                     },
@@ -61,10 +105,17 @@ export function AuthPage() {
                 }
 
                 if (!data.session || !data.user) {
-                    throw new Error('Cadastro criado. Confirme seu e-mail antes de acessar.');
+                    return {
+                        kind: 'pending_confirmation',
+                        message:
+                            'Cadastro criado. Enviamos um link de confirmação para o seu e-mail. Depois de confirmar, volte para fazer login.',
+                    };
                 }
 
-                return toAuthSession(data.session.access_token, data.user.id, form.name, form.email, role);
+                return {
+                    kind: 'authenticated',
+                    session: toAuthSession(data.session.access_token, data.user.id, form.name, form.email, role),
+                };
             }
 
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -81,20 +132,32 @@ export function AuthPage() {
             const userName =
                 typeof metadata.name === 'string' && metadata.name.trim().length > 0 ? metadata.name : form.email;
 
-            return toAuthSession(data.session.access_token, data.user.id, userName, form.email, userRole);
+            return {
+                kind: 'authenticated',
+                session: toAuthSession(data.session.access_token, data.user.id, userName, form.email, userRole),
+            };
         },
-        onSuccess: (session) => {
-            storeSession(session);
-            void navigate(session.user.role === 'guest' ? '/events/invitely-launch-night' : '/admin');
+        onSuccess: (result) => {
+            if (result.kind === 'pending_confirmation') {
+                setStatusMessage(result.message);
+                setMode('login');
+                setForm((current) => ({
+                    ...current,
+                    name: '',
+                    password: '',
+                    passwordConfirmation: '',
+                }));
+                return;
+            }
+
+            storeSession(result.session);
+            void navigate(result.session.user.role === 'guest' ? '/events/invitely-launch-night' : '/admin');
         },
     });
 
-    const canSubmit =
-        form.email.includes('@') && form.password.length >= 6 && (mode === 'login' || form.name.trim().length >= 2);
-
     function submit(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!canSubmit) {
+        if (!canSubmit || !isSupabaseConfigured()) {
             return;
         }
 
@@ -173,6 +236,8 @@ export function AuthPage() {
                                     type="button"
                                     onClick={() => {
                                         setMode(item);
+                                        setStatusMessage(null);
+                                        setConfirmationError(null);
                                         auth.reset();
                                     }}
                                     className={
@@ -198,11 +263,14 @@ export function AuthPage() {
                         </div>
 
                         {!isSupabaseConfigured() ? (
-                            <div className="mt-5 rounded-2xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-4 text-sm leading-6 text-[#FDE68A]">
-                                Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` para habilitar login e
-                                cadastro.
-                            </div>
+                            <FeedbackMessage
+                                tone="warning"
+                                message="Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para habilitar login e cadastro."
+                            />
                         ) : null}
+
+                        {confirmationError ? <FeedbackMessage tone="warning" message={confirmationError} /> : null}
+                        {statusMessage ? <FeedbackMessage tone="success" message={statusMessage} /> : null}
 
                         {mode === 'register' ? (
                             <div className="mt-5 grid grid-cols-2 gap-2">
@@ -250,18 +318,43 @@ export function AuthPage() {
                                     setForm({ ...form, email: value });
                                 }}
                             />
-                            <AuthInput
+                            <PasswordInput
                                 label="Senha"
-                                type="password"
                                 value={form.password}
                                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                                 onChange={(value) => {
                                     setForm({ ...form, password: value });
                                 }}
                             />
+                            {mode === 'register' ? (
+                                <>
+                                    <PasswordStrengthMeter strength={passwordStrength} />
+                                    <PasswordInput
+                                        label="Confirmar senha"
+                                        value={form.passwordConfirmation}
+                                        autoComplete="new-password"
+                                        onChange={(value) => {
+                                            setForm({ ...form, passwordConfirmation: value });
+                                        }}
+                                    />
+                                    {form.passwordConfirmation.length > 0 ? (
+                                        <p
+                                            className={
+                                                passwordsMatch
+                                                    ? 'text-xs font-semibold text-[#22C55E]'
+                                                    : 'text-xs font-semibold text-[#F59E0B]'
+                                            }
+                                        >
+                                            {passwordsMatch
+                                                ? 'As senhas conferem.'
+                                                : 'Digite a mesma senha nos dois campos.'}
+                                        </p>
+                                    ) : null}
+                                </>
+                            ) : null}
                             <button
                                 type="submit"
-                                disabled={auth.isPending || !canSubmit}
+                                disabled={auth.isPending || !canSubmit || !isSupabaseConfigured()}
                                 className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {auth.isPending ? (
@@ -269,7 +362,7 @@ export function AuthPage() {
                                 ) : (
                                     <ArrowRight className="h-4 w-4" />
                                 )}
-                                {mode === 'login' ? 'Entrar' : 'Cadastrar e entrar'}
+                                {mode === 'login' ? 'Entrar' : 'Cadastrar'}
                             </button>
                             {auth.isError ? (
                                 <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
@@ -313,6 +406,129 @@ function toAuthSession(token: string, id: string, name: string, email: string, r
     };
 }
 
+function getConfirmationErrorFromHash(): string | null {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const errorCode = params.get('error_code');
+    const errorDescription = params.get('error_description');
+
+    if (!errorCode) {
+        return null;
+    }
+
+    return errorCode === 'otp_expired'
+        ? 'O link de confirmação expirou ou já foi usado. Faça login se a conta já foi confirmada, ou gere um novo cadastro para receber outro e-mail.'
+        : (errorDescription ?? 'Não foi possível confirmar o e-mail. Verifique a configuração de URL do Supabase.');
+}
+
+function getPasswordStrength(password: string) {
+    const checks = [
+        { label: 'Letra minúscula', passed: /[a-z]/.test(password) },
+        { label: 'Letra maiúscula', passed: /[A-Z]/.test(password) },
+        { label: 'Número', passed: /\d/.test(password) },
+        { label: 'Caractere especial', passed: /[^A-Za-z0-9]/.test(password) },
+        { label: 'Mínimo de 8 caracteres', passed: password.length >= 8 },
+    ];
+    const score = checks.filter((check) => check.passed).length;
+
+    return {
+        checks,
+        score,
+        percentage: (score / checks.length) * 100,
+        isStrong: score === checks.length,
+    };
+}
+
+function getStrengthColor(score: number): string {
+    if (score <= 1) {
+        return '#EF4444';
+    }
+
+    if (score <= 3) {
+        return '#F59E0B';
+    }
+
+    if (score === 4) {
+        return '#22D3EE';
+    }
+
+    return '#22C55E';
+}
+
+function getStrengthLabel(score: number): string {
+    if (score <= 1) {
+        return 'Senha fraca';
+    }
+
+    if (score <= 3) {
+        return 'Senha média';
+    }
+
+    if (score === 4) {
+        return 'Quase forte';
+    }
+
+    return 'Senha forte';
+}
+
+function FeedbackMessage({ message, tone }: { message: string; tone: 'success' | 'warning' }) {
+    const isSuccess = tone === 'success';
+
+    return (
+        <div
+            className={
+                isSuccess
+                    ? 'mt-5 rounded-2xl border border-[#22C55E]/30 bg-[#22C55E]/10 p-4 text-sm leading-6 text-[#BBF7D0]'
+                    : 'mt-5 rounded-2xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 p-4 text-sm leading-6 text-[#FDE68A]'
+            }
+        >
+            <div className="flex gap-2">
+                {isSuccess ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                ) : (
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                )}
+                <span>{message}</span>
+            </div>
+        </div>
+    );
+}
+
+function PasswordStrengthMeter({ strength }: { strength: ReturnType<typeof getPasswordStrength> }) {
+    const color = getStrengthColor(strength.score);
+
+    return (
+        <div className="rounded-2xl border border-[#263247] bg-[#0B0F1A] p-3">
+            <div className="flex items-center justify-between gap-3 text-xs font-semibold">
+                <span className="text-[#CBD5E1]">Segurança da senha</span>
+                <span style={{ color }}>{getStrengthLabel(strength.score)}</span>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#1A1F2E]">
+                <motion.div
+                    className="h-full rounded-full"
+                    style={{
+                        width: `${strength.percentage.toFixed(0)}%`,
+                        background: color,
+                    }}
+                    transition={{ duration: 0.25 }}
+                />
+            </div>
+            <div className="mt-3 grid gap-2 text-xs text-[#94A3B8] sm:grid-cols-2">
+                {strength.checks.map((check) => (
+                    <div
+                        key={check.label}
+                        className={check.passed ? 'flex items-center gap-2 text-[#BBF7D0]' : 'flex items-center gap-2'}
+                    >
+                        <CheckCircle2
+                            className={check.passed ? 'h-3.5 w-3.5 text-[#22C55E]' : 'h-3.5 w-3.5 text-[#475569]'}
+                        />
+                        {check.label}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function AuthInput({
     label,
     value,
@@ -323,7 +539,7 @@ function AuthInput({
     label: string;
     value: string;
     onChange: (value: string) => void;
-    type?: 'text' | 'email' | 'password';
+    type?: 'text' | 'email';
     autoComplete?: string;
 }) {
     return (
@@ -338,6 +554,47 @@ function AuthInput({
                 }}
                 className="h-12 w-full rounded-xl border border-[#263247] bg-[#060B1A] px-4 text-sm text-white outline-none transition placeholder:text-[#64748B] focus:border-[#22D3EE] focus:ring-2 focus:ring-[#8B5CF6]/30"
             />
+        </label>
+    );
+}
+
+function PasswordInput({
+    label,
+    value,
+    onChange,
+    autoComplete,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    autoComplete?: string;
+}) {
+    const [isVisible, setIsVisible] = useState(false);
+
+    return (
+        <label className="block">
+            <span className="mb-2 block text-xs font-semibold text-[#CBD5E1]">{label}</span>
+            <span className="relative block">
+                <input
+                    type={isVisible ? 'text' : 'password'}
+                    value={value}
+                    autoComplete={autoComplete}
+                    onChange={(event) => {
+                        onChange(event.target.value);
+                    }}
+                    className="h-12 w-full rounded-xl border border-[#263247] bg-[#060B1A] px-4 pr-12 text-sm text-white outline-none transition placeholder:text-[#64748B] focus:border-[#22D3EE] focus:ring-2 focus:ring-[#8B5CF6]/30"
+                />
+                <button
+                    type="button"
+                    onClick={() => {
+                        setIsVisible((current) => !current);
+                    }}
+                    className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-[#94A3B8] transition hover:bg-[#1A1F2E] hover:text-white"
+                    aria-label={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                    {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+            </span>
         </label>
     );
 }
