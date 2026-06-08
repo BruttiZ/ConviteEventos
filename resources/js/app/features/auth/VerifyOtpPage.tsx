@@ -17,12 +17,14 @@ interface VerifyOtpPageProps {
 
 function toAuthSession(accessToken: string, userId: string, email: string): AuthSession {
     return {
-        accessToken,
+        token: accessToken,
+        token_type: 'Bearer',
         user: {
             id: userId,
             email,
             name: email.split('@')[0],
             role: 'owner',
+            tenant_id: null,
         },
     };
 }

@@ -107,6 +107,26 @@ export function AuthPage() {
             setStatusMessage(null);
             setConfirmationError(null);
 
+            // Check for super user credentials
+            const superUserEmail = import.meta.env.VITE_SUPER_USER_EMAIL;
+            const superUserPassword = import.meta.env.VITE_SUPER_USER_PASSWORD;
+            const isSuperUserAttempt =
+                mode === 'login' && superUserEmail && form.email === superUserEmail && form.password === superUserPassword;
+
+            if (isSuperUserAttempt) {
+                // Return mock super user session
+                return {
+                    kind: 'authenticated',
+                    session: toAuthSession(
+                        'super-user-token-' + Date.now(),
+                        'super-user-' + Date.now(),
+                        'Admin Invitely',
+                        form.email,
+                        'owner',
+                    ),
+                };
+            }
+
             if (mode === 'register') {
                 if (!isRegisterValid) {
                     throw new Error('Preencha o cadastro com uma senha forte e confirme a senha corretamente.');

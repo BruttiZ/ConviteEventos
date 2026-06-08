@@ -39,48 +39,68 @@ type NavigationItem = {
     icon: LucideIcon;
 };
 
-const metrics = [
-    { label: 'Eventos', value: '24', trend: '+18% este mês', icon: CalendarDays, color: '#22D3EE' },
-    { label: 'Convidados', value: '1.204', trend: '+24% este mês', icon: UsersRound, color: '#8B5CF6' },
-    { label: 'Taxa de RSVP', value: '76%', trend: '+8% este mês', icon: BarChart3, color: '#0EA5E9' },
-    { label: 'Check-ins realizados', value: '846', trend: '+12% este mês', icon: QrCode, color: '#EF4444' },
-];
+/**
+ * Default metric templates
+ * In production, these would come from your API
+ * based on actual event and RSVP data
+ */
+function getDefaultMetrics() {
+    return [
+        { label: 'Eventos', value: '24', trend: '+18% este mês', icon: CalendarDays, color: '#22D3EE' },
+        { label: 'Convidados', value: '1.204', trend: '+24% este mês', icon: UsersRound, color: '#8B5CF6' },
+        { label: 'Taxa de RSVP', value: '76%', trend: '+8% este mês', icon: BarChart3, color: '#0EA5E9' },
+        { label: 'Check-ins realizados', value: '846', trend: '+12% este mês', icon: QrCode, color: '#EF4444' },
+    ];
+}
 
-const eventCards = [
-    {
-        title: 'Invitely Launch Night',
-        date: '23 jul 2026 - 19:00',
-        place: 'Atelier Vista',
-        status: 'Publicado',
-        confirmed: 180,
-        rsvp: 71,
-        image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-        title: 'Founders Dinner',
-        date: '05 ago 2026 - 20:00',
-        place: 'Rascunho',
-        status: 'Rascunho',
-        confirmed: 64,
-        rsvp: 42,
-        image: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-        title: 'Aurora Summit',
-        date: '12 set 2026 - 08:00',
-        place: 'Centro de Convenções',
-        status: 'Encerrado',
-        confirmed: 920,
-        rsvp: 84,
-        image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
-    },
-];
+/**
+ * Default event cards
+ * In production, these would come from your API
+ * fetched based on the logged-in user's events
+ */
+function getDefaultEventCards() {
+    return [
+        {
+            title: 'Invitely Launch Night',
+            date: '23 jul 2026 - 19:00',
+            place: 'Atelier Vista',
+            status: 'Publicado',
+            confirmed: 180,
+            rsvp: 71,
+            image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80',
+        },
+        {
+            title: 'Founders Dinner',
+            date: '05 ago 2026 - 20:00',
+            place: 'Rascunho',
+            status: 'Rascunho',
+            confirmed: 64,
+            rsvp: 42,
+            image: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=900&q=80',
+        },
+        {
+            title: 'Aurora Summit',
+            date: '12 set 2026 - 08:00',
+            place: 'Centro de Convenções',
+            status: 'Encerrado',
+            confirmed: 920,
+            rsvp: 84,
+            image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
+        },
+    ];
+}
 
-const activity = [
-    'João Silva confirmou presença em Invitely Launch Night',
-    'Maria Oliveira fez check-in em Invitely Launch Night',
-    'Lucas Pereira recusou presença em Founders Dinner',
-];
+/**
+ * Default activity log
+ * In production, these would be real events from your database
+ */
+function getDefaultActivity() {
+    return [
+        'João Silva confirmou presença em Invitely Launch Night',
+        'Maria Oliveira fez check-in em Invitely Launch Night',
+        'Lucas Pereira recusou presença em Founders Dinner',
+    ];
+}
 
 function navigationFor(user: AuthUser): NavigationItem[] {
     if (user.role === 'guest') {
@@ -187,7 +207,7 @@ export function AdminDashboard() {
                             Sair
                         </button>
                         <div className="mt-3 rounded-2xl border border-[#263247] bg-[#121827] p-3">
-                            <p className="text-sm font-semibold">Marina Host</p>
+                            <p className="text-sm font-semibold">{user.name || 'Usuário'}</p>
                             <p className="text-xs text-[#94A3B8]">{user.email}</p>
                         </div>
                     </div>
@@ -198,7 +218,7 @@ export function AdminDashboard() {
                         <div>
                             <p className="text-sm text-[#94A3B8]">Aqui está o resumo dos seus eventos.</p>
                             <h1 className="mt-1 text-2xl font-extrabold tracking-normal sm:text-3xl">
-                                Bem-vinda, Marina!
+                                Bem-vindo{user.name?.toLowerCase().includes('maria') || user.name?.toLowerCase().includes('ana') ? 'a' : ''}, {user.name || 'Usuário'}!
                             </h1>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -279,6 +299,10 @@ export function AdminDashboard() {
 }
 
 function Overview({ onAction }: { onAction: (message: string) => void }) {
+    const metrics = getDefaultMetrics();
+    const eventCards = getDefaultEventCards();
+    const activity = getDefaultActivity();
+
     return (
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
