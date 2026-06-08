@@ -107,7 +107,7 @@ export function AuthPage() {
             setStatusMessage(null);
             setConfirmationError(null);
 
-            // Check for super user credentials
+            // Check for super user credentials (works in dev and prod if configured)
             const superUserEmail = import.meta.env.VITE_SUPER_USER_EMAIL;
             const superUserPassword = import.meta.env.VITE_SUPER_USER_PASSWORD;
             const isSuperUserAttempt =
