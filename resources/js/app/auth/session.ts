@@ -1,7 +1,7 @@
 export type UserRole = 'owner' | 'guest' | 'platform_admin';
 
 export type AuthUser = {
-    id: number;
+    id: number | string;
     name: string;
     email: string;
     role: UserRole;

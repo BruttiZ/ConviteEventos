@@ -5,13 +5,13 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
     {
-        ignores: ['public/build', 'vendor', 'node_modules'],
+        ignores: ['dist', 'public/build', 'vendor', 'node_modules'],
     },
     js.configs.recommended,
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
     {
-        files: ['resources/js/**/*.{ts,tsx}'],
+        files: ['resources/js/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}'],
         languageOptions: {
             parserOptions: {
                 projectService: true,

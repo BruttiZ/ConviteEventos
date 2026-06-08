@@ -22,5 +22,11 @@
         "target": "ES2022",
         "types": ["vite/client"]
     },
-    "include": ["resources/js/**/*.ts", "resources/js/**/*.tsx", "vite.config.js"]
+    "include": [
+        "resources/js/**/*.ts",
+        "resources/js/**/*.tsx",
+        "lib/**/*.ts",
+        "vite.config.js",
+        "vite.vercel.config.js"
+    ]
 }

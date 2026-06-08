@@ -37,6 +37,14 @@ class AppServiceProvider extends ServiceProvider
             $request->ip().'|'.$request->route('slug')
         ));
 
+        RateLimiter::for('rsvp-otp', fn (Request $request) => Limit::perMinute(4)->by(
+            $request->ip().'|'.$request->string('email')->lower().'|'.$request->string('event_id')
+        ));
+
+        RateLimiter::for('auth-email', fn (Request $request) => Limit::perMinute(3)->by(
+            $request->ip().'|'.$request->string('email')->lower()
+        ));
+
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(
             $request->ip().'|'.$request->string('email')->lower()
         ));

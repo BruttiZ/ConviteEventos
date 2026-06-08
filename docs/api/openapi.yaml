@@ -18,7 +18,7 @@ paths:
   /auth/login:
     post:
       tags: [Auth]
-      summary: Emite token Sanctum para uso no dashboard e na demo.
+      summary: Emite token Sanctum para uso no dashboard Laravel.
       requestBody:
         required: true
         content:
@@ -30,11 +30,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: admin@invitely.dev
+                  example: usuario@empresa.com
                 password:
                   type: string
                   format: password
-                  example: password
+                  example: senha-forte-123
                 device_name:
                   type: string
                   example: local-dev
@@ -46,7 +46,7 @@ paths:
   /auth/register:
     post:
       tags: [Auth]
-      summary: Cria usuario demo e emite token Sanctum.
+      summary: Cria usuario e emite token Sanctum.
       requestBody:
         required: true
         content:
@@ -65,7 +65,7 @@ paths:
                 password:
                   type: string
                   format: password
-                  example: password
+                  example: senha-forte-123
                 role:
                   type: string
                   enum: [owner, guest, platform_admin]

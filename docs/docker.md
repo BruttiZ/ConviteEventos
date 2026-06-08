@@ -39,13 +39,23 @@ O servico `node` executa automaticamente:
 
 No fluxo Docker padrao, abra a aplicacao em `http://localhost:8080`. O navegador nao precisa acessar uma porta Vite separada.
 
-## Contas demo
+Rotas principais:
 
-Todas usam a senha `password`:
+- Landing page: `http://localhost:8080`
+- Login / cadastro: `http://localhost:8080/login`
+- Dashboard: `http://localhost:8080/admin`
+- Convite de exemplo: `http://localhost:8080/events/invitely-launch-night`
 
-- `host@invitely.dev`: dono do evento.
-- `guest@invitely.dev`: convidado.
-- `admin@invitely.dev`: admin da plataforma.
+## Autenticacao
+
+O frontend usa Supabase Auth para cadastro e login reais no ambiente de portfolio.
+
+Configure no `.env`:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
 
 ## Comandos uteis
 

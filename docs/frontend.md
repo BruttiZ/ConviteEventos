@@ -7,7 +7,8 @@ O frontend usa React, TypeScript, Vite, TailwindCSS e Framer Motion.
 ```text
 resources/js/
   app/auth/              Sessao local, usuario autenticado e papeis
-  app/features/auth/     Login, cadastro e atalhos de demo
+  app/features/landing/  Landing SaaS publica
+  app/features/auth/     Login e cadastro reais com Supabase Auth
   app/features/public/   Convite publico, RSVP, QR Code e compartilhamento
   app/features/admin/    Dashboard interativo por perfil
   components/ui/         Componentes reutilizaveis de interface
@@ -16,19 +17,63 @@ resources/js/
 
 ## Rotas principais
 
+- `/`: landing page SaaS com hero, mockup de dashboard e benefícios.
 - `/login`: tela de login/cadastro com tres perfis de teste.
-- `/events/invitely-launch-night`: convite publico com RSVP, compartilhamento, tema e QR Code.
+- `/events/invitely-launch-night`: convite publico com RSVP reativo, compartilhamento, tema, feedback visual e QR Code.
+- `/e/invitely-launch-night`: alias curto para convite publico.
 - `/admin`: dashboard interativo que muda a navegacao conforme o papel do usuario.
 
-## Contas demo
+## Design system visual
 
-Todas usam a senha `password`.
+- Fundo principal: `#060B1A`.
+- Sidebar e fundo secundario: `#0B0F1A`.
+- Cards: `#121827`.
+- Cards elevados: `#1A1F2E`.
+- Borda suave: `#263247`.
+- Texto principal: `#FFFFFF`.
+- Texto secundario: `#94A3B8`.
+- Roxo principal: `#8B5CF6`.
+- Azul ciano: `#22D3EE`.
+- Azul acao: `#0EA5E9`.
+- Verde sucesso: `#22C55E`.
+- Vermelho alerta: `#EF4444`.
+- Amarelo destaque: `#F59E0B`.
 
-| Perfil              | E-mail               |
-| ------------------- | -------------------- |
-| Dono do evento      | `host@invitely.dev`  |
-| Convidado           | `guest@invitely.dev` |
-| Admin da plataforma | `admin@invitely.dev` |
+Componentes seguem dark mode premium, bordas arredondadas, glassmorphism leve, gradientes sutis, icones Lucide e microinteracoes com Framer Motion.
+
+## Autenticacao
+
+O frontend usa Supabase Auth para cadastro e login reais no ambiente de portfolio.
+
+Variaveis necessarias:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
+
+O cadastro publico permite os perfis `Organizador` e `Convidado`. O papel `platform_admin` deve ser definido manualmente no Supabase metadata quando for necessario testar administracao da plataforma.
+
+A tela de cadastro exige senha forte antes de chamar o Supabase:
+
+- letra minuscula;
+- letra maiuscula;
+- numero;
+- caractere especial;
+- minimo de 8 caracteres;
+- confirmacao de senha igual ao primeiro campo.
+
+O formulario tambem oferece botao de visibilidade de senha e medidor visual de seguranca. Quando a confirmacao de e-mail esta ativa no Supabase, o cadastro envia `emailRedirectTo` com a origem atual do app para evitar links apontando para uma porta local incorreta.
+
+## RSVP publico sem senha
+
+O convite publico usa um fluxo em duas etapas:
+
+1. O convidado informa nome e e-mail.
+2. A API envia um codigo de 6 digitos por e-mail.
+3. O convidado escolhe `Vou participar` ou `Nao vou`, informa o codigo e registra a resposta.
+
+Esse fluxo nao cria usuario com senha. Ele valida posse do e-mail e registra ou atualiza `guests` e `rsvps` pelo backend. No evento fallback demo, qualquer codigo com 6 digitos e aceito apenas para manter a experiencia navegavel sem API.
 
 ## Principios
 
@@ -48,8 +93,15 @@ A landing publica prioriza celulares:
 - navegacao fixa inferior para confirmacao e compartilhamento;
 - areas tocaveis com altura estavel;
 - feedback visual para sucesso, erro e envio de RSVP;
+- card de confirmacao com etapas de preenchimento, validacao e QR Code;
 - galerias e cards fluidos entre celular, tablet e desktop;
 - service worker desabilitado em ambiente local para evitar cache antigo.
+
+## Dashboard responsivo
+
+- Desktop: sidebar fixa, grid de métricas, gráficos e cards.
+- Tablet: grids fluidos e espaçamento reduzido.
+- Mobile: bottom navigation, cards em largura total, botões grandes e formulário confortável.
 
 ## Comandos
 

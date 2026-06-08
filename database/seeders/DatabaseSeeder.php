@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        $event = Event::query()->firstOrCreate([
+        $event = Event::query()->updateOrCreate([
             'tenant_id' => $tenant->id,
             'slug' => 'invitely-launch-night',
         ], [
@@ -75,8 +75,8 @@ class DatabaseSeeder extends Seeder
             'hero' => [
                 'eyebrow' => 'Convite digital',
                 'title' => 'Invitely Launch Night',
-                'subtitle' => 'Uma experiencia elegante para confirmar presenca e acompanhar cada detalhe.',
-                'image_url' => 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1800&q=80',
+                'subtitle' => 'Uma noite para celebrar produto, comunidade e experiencias memoraveis.',
+                'image_url' => 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1800&q=85',
             ],
             'content' => [
                 'hosts' => ['Equipe Invitely'],
