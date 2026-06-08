@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AdminDashboard } from './app/features/admin/AdminDashboard';
 import { AuthPage } from './app/features/auth/AuthPage';
+import { LandingPage } from './app/features/landing/LandingPage';
 import { PublicEventPage } from './app/features/public/PublicEventPage';
 
 const queryClient = new QueryClient({
@@ -28,7 +29,7 @@ createRoot(rootElement).render(
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <Routes>
-                    <Route path="/" element={<PublicEventPage />} />
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<AuthPage />} />
                     <Route path="/register" element={<AuthPage />} />
                     <Route path="/events/:slug" element={<PublicEventPage />} />

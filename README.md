@@ -1,147 +1,144 @@
 # Invitely
 
 [![CI](https://github.com/BruttiZ/ConviteEventos/actions/workflows/ci.yml/badge.svg)](https://github.com/BruttiZ/ConviteEventos/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.4-777bb4.svg)](composer.json)
 [![Laravel](https://img.shields.io/badge/Laravel-12-ff2d20.svg)](composer.json)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg)](package.json)
 
-Invitely is an open source, SaaS-ready platform for digital invitations, RSVP, event landing pages, QR Code check-in, and event operations.
+Invitely é uma plataforma open source e SaaS-ready para criação de eventos, convites digitais, convidados, RSVP, check-in por QR Code e operação de eventos.
 
-It is built with Laravel, React, TypeScript, PostgreSQL, Redis, TailwindCSS, and Docker. The goal is to feel like a polished startup product while remaining simple enough for contributors to run locally in minutes.
+O projeto usa Laravel, React, TypeScript, PostgreSQL, Redis, TailwindCSS, Framer Motion e Docker. A proposta é parecer um produto premium de uma startup moderna, mas continuar simples para qualquer pessoa rodar localmente.
 
-> Documentation is also available in [Portuguese (Brazil)](README.pt-BR.md) and [English (US)](README.en-US.md).
+## Prévia
 
-## Preview
+Depois de subir o Docker, abra:
 
-Screenshots and a short demo GIF will live in `docs/assets` as the UI stabilizes. The current demo can be opened locally after the Docker setup:
+- Landing page: `http://localhost:8080`
+- Convite demo: `http://localhost:8080/events/invitely-launch-night`
+- Login / cadastro: `http://localhost:8080/login`
+- Dashboard interativo: `http://localhost:8080/admin`
 
-- Public event: `http://localhost:8080/events/invitely-launch-night`
-- Login / register: `http://localhost:8080/login`
-- Interactive dashboard: `http://localhost:8080/admin`
+## Identidade visual
 
-## Highlights
+O redesign atual usa uma estética dark premium inspirada em Linear, Stripe, Vercel, Raycast e Apple Events:
 
-- Public event pages with countdown, gallery, map area, Spotify playlist, QR Code, and RSVP.
-- Login and register screens with demo roles for event owner, guest, and platform admin.
-- Interactive dashboard demo with role-aware navigation, check-in simulation, templates, guests, and platform view.
-- Laravel API structured around Actions, DTOs, repositories, form requests, policies, and resources.
-- Multi-tenant data model prepared for SaaS growth.
-- Docker stack with Nginx, PHP 8.4-FPM, PostgreSQL, Redis, Mailpit, MinIO, and Vite.
-- Quality gate with Pest, PHPStan/Larastan, Laravel Pint, TypeScript, and GitHub Actions.
-- Contributor-focused docs, conventional commits, and security policy.
+- Fundo principal `#060B1A`.
+- Sidebar e superfícies secundárias `#0B0F1A`.
+- Cards `#121827` e cards elevados `#1A1F2E`.
+- Bordas suaves `#263247`.
+- Ações em gradiente roxo/ciano com `#8B5CF6`, `#0EA5E9` e `#22D3EE`.
+- Tipografia Inter, títulos fortes, cards arredondados, glassmorphism leve e microinterações com Framer Motion.
+
+## Funcionalidades atuais
+
+- Landing page SaaS moderna com hero, mockup flutuante de dashboard e cards de benefícios.
+- Convite público premium com imagem de fundo, overlay escuro, CTA, countdown, galeria, QR Code e formulário RSVP.
+- Formulário de confirmação com nome, e-mail, acompanhantes com botões `+` e `-`, mensagem opcional, confirmar e recusar.
+- Login/cadastro com perfis demo para dono do evento, convidado e admin da plataforma.
+- Dashboard responsivo com sidebar no desktop, bottom navigation no mobile, métricas, gráfico de linha, distribuição de RSVP e cards de eventos.
+- Telas demo de eventos, convidados, templates, check-in, relatórios, integrações, configurações e plataforma.
+- API Laravel versionada com Sanctum, Actions, DTOs, repositories, Form Requests, policies e resources.
+- Stack Docker com Nginx, PHP 8.4-FPM, PostgreSQL, Redis, Mailpit, MinIO e Node para build frontend.
 
 ## Stack
 
-| Area        | Technology                                                |
-| ----------- | --------------------------------------------------------- |
-| Backend     | Laravel 12, PHP 8.4, Sanctum                              |
-| Frontend    | React 19, TypeScript, Vite, TailwindCSS, Framer Motion    |
-| Data        | PostgreSQL, Redis                                         |
-| Local infra | Docker, Nginx, Mailpit, MinIO                             |
-| Quality     | PestPHP, PHPStan/Larastan, Laravel Pint, ESLint, Prettier |
+| Área        | Tecnologia                                                           |
+| ----------- | -------------------------------------------------------------------- |
+| Backend     | Laravel 12, PHP 8.4, Sanctum                                         |
+| Frontend    | React 19, TypeScript, Vite, TailwindCSS, Framer Motion, Lucide Icons |
+| Dados       | PostgreSQL, Redis                                                    |
+| Infra local | Docker, Nginx, Mailpit, MinIO                                        |
+| Qualidade   | PestPHP, PHPStan/Larastan, Laravel Pint, ESLint, Prettier            |
 
-## Quick Start
+## Como rodar
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose up -d --build
 ```
 
-Open:
+No PowerShell:
 
-- App: `http://localhost:8080`
-- Demo event: `http://localhost:8080/events/invitely-launch-night`
-- Login / register: `http://localhost:8080/login`
-- Dashboard: `http://localhost:8080/admin`
-- Mailpit: `http://localhost:8025`
-- MinIO Console: `http://localhost:9001`
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
+```
 
-Demo users:
+## Contas demo
 
-| Profile        | Email                | Password   | Purpose                                                |
-| -------------- | -------------------- | ---------- | ------------------------------------------------------ |
-| Event owner    | `host@invitely.dev`  | `password` | Manage events, guests, themes, RSVP, and check-in.     |
-| Guest          | `guest@invitely.dev` | `password` | Open the invitation, RSVP, and simulate QR Code usage. |
-| Platform admin | `admin@invitely.dev` | `password` | Inspect platform-level operation and tenants.          |
+Todas usam a senha `password`.
 
-## Development Commands
+| Perfil              | E-mail               | O que testa                                  |
+| ------------------- | -------------------- | -------------------------------------------- |
+| Dono do evento      | `host@invitely.dev`  | Eventos, convidados, temas, RSVP e check-in. |
+| Convidado           | `guest@invitely.dev` | Convite público, confirmação e QR Code.      |
+| Admin da plataforma | `admin@invitely.dev` | Visão operacional de tenants e plataforma.   |
+
+## Comandos úteis
 
 ```bash
 docker compose ps
 docker compose logs -f app
 docker compose exec app php artisan test
-docker compose exec app vendor/bin/pint
+docker compose exec app vendor/bin/pint --test
 docker compose exec app vendor/bin/phpstan analyse --memory-limit=512M
+docker compose exec node npm run lint
+docker compose exec node npm run format:check
 docker compose exec node npm run typecheck
 docker compose exec node npm run build
 ```
 
-## Architecture
+## Arquitetura
 
-The backend is organized around feature and domain boundaries:
+O backend é organizado por fronteiras de domínio e casos de uso:
 
-- `app/Domain`: use cases, DTOs, and repository contracts.
-- `app/Infrastructure`: Eloquent implementations of domain contracts.
-- `app/Http`: controllers, middleware, form requests, and API resources.
-- `app/Support/Tenancy`: tenant resolution context.
-- `database`: tenant, event, guest, RSVP, check-in, and operational schemas.
-- `resources/js/app/features`: frontend features grouped by product area.
+- `app/Domain`: actions, DTOs e contratos.
+- `app/Infrastructure`: implementações Eloquent dos contratos.
+- `app/Http`: controllers, middleware, form requests e resources.
+- `app/Support/Tenancy`: contexto de tenant.
+- `database`: schemas de tenants, eventos, convidados, RSVP, check-in e operação.
 
-Controllers stay thin. Business behavior lives in Actions such as `ConfirmRsvpAction` and `CreateEventAction`. Persistence details stay behind repository contracts so future storage and tenancy strategies can evolve without rewriting HTTP behavior.
+O frontend é organizado por features:
 
-See [Architecture Overview](docs/architecture/overview.md).
+- `resources/js/app/features/landing`: landing page SaaS.
+- `resources/js/app/features/auth`: login, cadastro e perfis demo.
+- `resources/js/app/features/admin`: dashboard operacional.
+- `resources/js/app/features/public`: convite público e RSVP.
 
-## Project Structure
+## Fluxo demo
 
-```text
-app/
-  Domain/                 Business actions, DTOs, and contracts
-  Infrastructure/         Framework-specific implementations
-  Http/                   API layer, requests, resources, middleware
-resources/
-  js/app/features/        React features by product area
-docker/
-  nginx/                  Web server configuration
-docs/
-  architecture/           Technical documentation
-tests/
-  Feature/                Product behavior tests
-```
+1. Abra `http://localhost:8080`.
+2. Clique em `Começar agora` ou acesse `http://localhost:8080/login`.
+3. Escolha um dos três perfis demo.
+4. Entre com a senha `password`.
+5. Explore o dashboard, os cards, o check-in e o convite público.
 
-## Current Demo Flow
-
-1. Open `http://localhost:8080/login`.
-2. Choose one of the three demo profiles.
-3. Sign in with password `password`.
-4. Explore the dashboard tabs and actions.
-5. Open the public event from the dashboard or directly at `/events/invitely-launch-night`.
-
-In local Docker, the React app is served from the generated Vite build through Nginx. The service worker is disabled locally to avoid stale JavaScript while developing.
+No Docker local, o React é servido pelo build gerado em `public/build` através do Nginx. O service worker é desativado fora de produção para evitar JavaScript antigo em cache.
 
 ## Roadmap
 
-- Event and guest CRUD in the admin UI.
-- CSV import/export for guests.
-- Image upload pipeline backed by MinIO.
-- QR scanner check-in interface.
-- Theme builder and template marketplace.
-- Email notification jobs and RSVP reminders.
-- Public screenshots and demo GIF.
-- OpenAPI/Swagger documentation.
+- CRUD real completo para eventos e convidados na UI.
+- Importação/exportação CSV avançada.
+- Upload de imagens com MinIO.
+- Leitor real de QR Code no check-in.
+- Builder visual de temas e templates.
+- Jobs de e-mail e lembretes de RSVP.
+- Screenshots e GIF oficial em `docs/assets`.
+- Documentação OpenAPI/Swagger expandida.
 
-## Contributing
+## Contribuição
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md) before opening issues or pull requests.
+Leia [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) e [SECURITY.md](SECURITY.md) antes de abrir issues ou pull requests.
 
-This repository uses Conventional Commits. Commit messages should be written in Brazilian Portuguese, for example:
+O projeto usa Conventional Commits em português brasileiro:
 
 ```text
 feat: adiciona fluxo de RSVP
 fix: corrige responsividade do painel admin
-docs: melhora guia de instalação Docker
+docs: melhora guia Docker
 ```
 
-## License
+## Licença
 
-Invitely is open source software licensed under the [MIT license](LICENSE).
+Invitely é um software open source licenciado sob a [MIT license](LICENSE).

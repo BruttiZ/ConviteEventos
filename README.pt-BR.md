@@ -12,7 +12,7 @@ As rotas da API ficam em `routes/api.php` com prefixo `/api/v1`. A pagina public
 
 Abra:
 
-- App: `http://localhost:8080`
+- Landing page: `http://localhost:8080`
 - Convite demo: `http://localhost:8080/events/invitely-launch-night`
 - Login / cadastro: `http://localhost:8080/login`
 - Dashboard: `http://localhost:8080/admin`
@@ -26,6 +26,17 @@ Contas locais, todas com senha `password`:
 | Dono do evento      | `host@invitely.dev`  | Eventos, convidados, temas, RSVP e check-in. |
 | Convidado           | `guest@invitely.dev` | Convite publico, confirmacao e QR Code.      |
 | Admin da plataforma | `admin@invitely.dev` | Visao operacional de tenants e plataforma.   |
+
+## Redesign atual
+
+O app foi redesenhado para uma estética dark premium de SaaS moderno:
+
+- Landing page com hero "Eventos incríveis. Conexões reais. Resultados extraordinários.".
+- Mockup flutuante do dashboard na hero.
+- Dashboard com sidebar desktop, bottom navigation mobile, métricas, gráfico de linha e distribuição de RSVP.
+- Eventos em cards com imagem, status, data, local, confirmados, taxa de RSVP e CTA.
+- Convite público com imagem de fundo, overlay escuro, countdown, formulário confortável e QR Code.
+- Paleta baseada em `#060B1A`, `#0B0F1A`, `#121827`, `#263247`, `#8B5CF6`, `#22D3EE` e `#0EA5E9`.
 
 ## Servicos Docker
 

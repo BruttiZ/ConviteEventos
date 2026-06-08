@@ -39,6 +39,13 @@ O servico `node` executa automaticamente:
 
 No fluxo Docker padrao, abra a aplicacao em `http://localhost:8080`. O navegador nao precisa acessar uma porta Vite separada.
 
+Rotas principais:
+
+- Landing page: `http://localhost:8080`
+- Login / cadastro: `http://localhost:8080/login`
+- Dashboard: `http://localhost:8080/admin`
+- Convite demo: `http://localhost:8080/events/invitely-launch-night`
+
 ## Contas demo
 
 Todas usam a senha `password`:

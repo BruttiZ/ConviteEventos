@@ -1,13 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowRight, CalendarDays, Loader2, ShieldCheck, Sparkles, TicketCheck } from 'lucide-react';
+import { ArrowRight, CalendarDays, Loader2, Mail, ShieldCheck, Sparkles, TicketCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { SyntheticEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { AuthSession, UserRole, roleLabel, storeSession } from '../../auth/session';
 
 type AuthMode = 'login' | 'register';
@@ -33,14 +29,14 @@ const demoAccounts: {
     {
         role: 'guest',
         title: 'Convidado',
-        description: 'Visualiza convite, confirma presenca e usa QR Code.',
+        description: 'Visualiza convite, confirma presença e usa QR Code.',
         email: 'guest@invitely.dev',
         icon: TicketCheck,
     },
     {
         role: 'platform_admin',
         title: 'Admin Invitely',
-        description: 'Enxerga operacao, tenants, saude e governanca.',
+        description: 'Enxerga operação, tenants, saúde e governança.',
         email: 'admin@invitely.dev',
         icon: ShieldCheck,
     },
@@ -76,7 +72,7 @@ export function AuthPage() {
             if (!response.ok) {
                 const payload = (await response.json().catch(() => null)) as { message?: string } | null;
 
-                throw new Error(payload?.message ?? 'Nao foi possivel autenticar.');
+                throw new Error(payload?.message ?? 'Não foi possível autenticar.');
             }
 
             return (await response.json()) as AuthResponse;
@@ -99,151 +95,219 @@ export function AuthPage() {
     }
 
     return (
-        <main className="min-h-screen bg-slate-950 text-white">
-            <section className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_440px] lg:px-8">
-                <div className="flex flex-col justify-between py-4">
-                    <header className="flex items-center justify-between">
-                        <Link
-                            to="/"
-                            className="inline-flex h-10 items-center rounded-full bg-white/10 px-4 text-sm font-bold"
-                        >
+        <main className="min-h-screen overflow-x-hidden bg-[#060B1A] text-white">
+            <section className="relative mx-auto grid w-full max-w-7xl gap-8 px-4 py-5 sm:px-6 lg:min-h-screen lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8">
+                <div className="absolute left-16 top-10 h-72 w-72 rounded-full bg-[#8B5CF6]/20 blur-3xl" />
+                <div className="absolute bottom-10 right-16 h-72 w-72 rounded-full bg-[#22D3EE]/10 blur-3xl" />
+
+                <div className="relative z-10 flex min-w-0 flex-col gap-8 py-4 lg:justify-between">
+                    <header className="flex min-w-0 items-center justify-between gap-3">
+                        <Link to="/" className="inline-flex min-w-0 items-center gap-2 text-sm font-bold">
+                            <Sparkles className="h-5 w-5 text-[#A78BFA]" />
                             Invitely
                         </Link>
-                        <Button asChild variant="ghost">
-                            <Link to="/events/invitely-launch-night">Ver convite</Link>
-                        </Button>
+                        <Link
+                            to="/events/invitely-launch-night"
+                            className="hidden shrink-0 rounded-xl border border-[#263247] bg-[#121827]/80 px-3 py-2 text-xs font-semibold transition hover:scale-[1.03] min-[420px]:inline-flex sm:px-4 sm:text-sm"
+                        >
+                            Ver convite
+                        </Link>
                     </header>
 
                     <motion.div
-                        initial={{ opacity: 0, y: 16 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45 }}
-                        className="max-w-3xl py-12"
+                        className="w-full max-w-[calc(100vw-2rem)] py-4 sm:max-w-3xl sm:py-8 lg:py-14"
                     >
-                        <Badge className="border-white/15 bg-white/10 text-white">
-                            <Sparkles className="mr-2 h-3.5 w-3.5" />
+                        <span className="inline-flex items-center gap-2 rounded-full border border-[#263247] bg-[#121827]/80 px-3 py-1 text-xs text-[#CBD5E1]">
+                            <Sparkles className="h-3.5 w-3.5 text-[#22D3EE]" />
                             Demo interativa
-                        </Badge>
-                        <h1 className="mt-5 text-4xl font-bold leading-tight tracking-normal sm:text-5xl lg:text-6xl">
-                            Entre como cada perfil e navegue pela experiencia real do produto.
+                        </span>
+                        <h1 className="mt-6 max-w-full break-words text-2xl font-extrabold leading-tight tracking-normal min-[360px]:text-3xl sm:text-5xl lg:text-6xl">
+                            Entre como cada perfil e navegue pela experiência real do produto.
                         </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-                            Use os atalhos abaixo para brincar com permissoes diferentes: quem organiza a festa, quem
+                        <p className="mt-5 max-w-full text-base leading-8 text-[#CBD5E1] sm:max-w-2xl">
+                            Use os atalhos abaixo para brincar com permissões diferentes: quem organiza a festa, quem
                             foi convidado e quem administra a plataforma.
                         </p>
                     </motion.div>
 
-                    <div className="grid gap-3 md:grid-cols-3">
+                    <div className="hidden min-w-0 gap-3 sm:grid md:grid-cols-3">
                         {demoAccounts.map((account) => {
                             const Icon = account.icon;
                             const isSelected = account.role === role;
 
                             return (
-                                <button
+                                <motion.button
                                     key={account.role}
                                     type="button"
+                                    whileHover={{ y: -4 }}
                                     onClick={() => {
                                         chooseDemo(account.role, account.email);
                                     }}
                                     className={
                                         isSelected
-                                            ? 'rounded-lg border border-sky-300 bg-sky-400/15 p-4 text-left shadow-[0_0_0_1px_rgba(125,211,252,0.35)] transition'
-                                            : 'rounded-lg border border-white/10 bg-white/5 p-4 text-left transition hover:bg-white/10'
+                                            ? 'min-w-0 rounded-2xl border border-[#22D3EE] bg-[#0EA5E9]/15 p-4 text-left shadow-[0_0_0_1px_rgba(34,211,238,0.25)]'
+                                            : 'min-w-0 rounded-2xl border border-[#263247] bg-[#121827]/80 p-4 text-left transition hover:border-[#8B5CF6]/60'
                                     }
                                 >
-                                    <Icon className="h-5 w-5 text-sky-300" />
-                                    <div className="mt-3 font-semibold">{account.title}</div>
-                                    <p className="mt-1 text-sm leading-6 text-slate-300">{account.description}</p>
-                                </button>
+                                    <Icon className="h-5 w-5 text-[#22D3EE]" />
+                                    <div className="mt-3 font-bold">{account.title}</div>
+                                    <p className="mt-2 text-sm leading-6 text-[#CBD5E1]">{account.description}</p>
+                                </motion.button>
                             );
                         })}
                     </div>
                 </div>
 
-                <div className="flex items-center">
-                    <Card className="w-full border-white/10 bg-white text-slate-950 shadow-2xl dark:bg-white dark:text-slate-950">
-                        <CardHeader>
-                            <div className="flex rounded-md bg-slate-100 p-1">
-                                {(['login', 'register'] as const).map((item) => (
+                <div className="relative z-10 flex min-w-0 items-start pb-6 lg:items-center lg:pb-0">
+                    <motion.div
+                        initial={false}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ delay: 0.1, duration: 0.45 }}
+                        className="w-full rounded-3xl border border-[#263247] bg-[#121827]/90 p-5 shadow-2xl backdrop-blur-xl"
+                    >
+                        <div className="grid grid-cols-2 rounded-xl bg-[#0B0F1A] p-1">
+                            {(['login', 'register'] as const).map((item) => (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    onClick={() => {
+                                        setMode(item);
+                                    }}
+                                    className={
+                                        mode === item
+                                            ? 'h-11 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold text-white'
+                                            : 'h-11 rounded-lg text-sm font-bold text-[#94A3B8]'
+                                    }
+                                >
+                                    {item === 'login' ? 'Login' : 'Cadastro'}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="mt-6">
+                            <h2 className="text-xl font-bold">
+                                {mode === 'login' ? 'Acessar conta' : 'Criar conta demo'}
+                            </h2>
+                            <p className="mt-2 text-sm text-[#94A3B8]">
+                                Perfil selecionado: <strong className="text-[#CBD5E1]">{roleLabel(role)}</strong>
+                            </p>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-3 gap-2 sm:hidden">
+                            {demoAccounts.map((account) => {
+                                const Icon = account.icon;
+
+                                return (
                                     <button
-                                        key={item}
+                                        key={account.role}
                                         type="button"
                                         onClick={() => {
-                                            setMode(item);
+                                            chooseDemo(account.role, account.email);
                                         }}
                                         className={
-                                            mode === item
-                                                ? 'h-9 flex-1 rounded bg-white text-sm font-semibold shadow-sm'
-                                                : 'h-9 flex-1 rounded text-sm font-semibold text-slate-500'
+                                            account.role === role
+                                                ? 'grid min-h-20 place-items-center rounded-xl border border-[#22D3EE] bg-[#0EA5E9]/15 px-2 text-center text-[11px] font-bold text-white'
+                                                : 'grid min-h-20 place-items-center rounded-xl border border-[#263247] bg-[#0B0F1A] px-2 text-center text-[11px] font-bold text-[#CBD5E1]'
                                         }
                                     >
-                                        {item === 'login' ? 'Login' : 'Cadastro'}
+                                        <Icon className="h-4 w-4 text-[#22D3EE]" />
+                                        {account.role === 'owner'
+                                            ? 'Dono'
+                                            : account.role === 'guest'
+                                              ? 'Convidado'
+                                              : 'Admin'}
                                     </button>
-                                ))}
-                            </div>
-                            <CardTitle className="pt-3">
-                                {mode === 'login' ? 'Acessar conta' : 'Criar conta demo'}
-                            </CardTitle>
-                            <p className="text-sm text-slate-500">
-                                Perfil selecionado: <strong>{roleLabel(role)}</strong>
-                            </p>
-                        </CardHeader>
-                        <CardContent>
-                            <form className="grid gap-3" onSubmit={submit}>
-                                {mode === 'register' && (
-                                    <Input
-                                        className="bg-white text-slate-950 dark:bg-white dark:text-slate-950"
-                                        value={form.name}
-                                        onChange={(event) => {
-                                            setForm({ ...form, name: event.target.value });
-                                        }}
-                                        placeholder="Nome"
-                                    />
-                                )}
-                                <Input
-                                    className="bg-white text-slate-950 dark:bg-white dark:text-slate-950"
-                                    type="email"
-                                    value={form.email}
-                                    onChange={(event) => {
-                                        setForm({ ...form, email: event.target.value });
-                                    }}
-                                    placeholder="email@exemplo.com"
-                                />
-                                <Input
-                                    className="bg-white text-slate-950 dark:bg-white dark:text-slate-950"
-                                    type="password"
-                                    value={form.password}
-                                    onChange={(event) => {
-                                        setForm({ ...form, password: event.target.value });
-                                    }}
-                                    placeholder="Senha"
-                                />
-                                <Button type="submit" disabled={auth.isPending}>
-                                    {auth.isPending ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <ArrowRight className="h-4 w-4" />
-                                    )}
-                                    {mode === 'login' ? 'Entrar' : 'Criar e entrar'}
-                                </Button>
-                                {auth.isError && (
-                                    <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                                        {auth.error.message}
-                                    </p>
-                                )}
-                            </form>
+                                );
+                            })}
+                        </div>
 
-                            <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                                <div className="font-semibold text-slate-950">{selectedAccount?.title}</div>
-                                <p className="mt-1">{selectedAccount?.description}</p>
-                                <p className="mt-3">
-                                    Senha demo: <strong>password</strong>
+                        <form className="mt-5 grid gap-3" onSubmit={submit}>
+                            {mode === 'register' ? (
+                                <AuthInput
+                                    label="Nome"
+                                    value={form.name}
+                                    onChange={(value) => {
+                                        setForm({ ...form, name: value });
+                                    }}
+                                />
+                            ) : null}
+                            <AuthInput
+                                label="E-mail"
+                                type="email"
+                                value={form.email}
+                                onChange={(value) => {
+                                    setForm({ ...form, email: value });
+                                }}
+                            />
+                            <AuthInput
+                                label="Senha"
+                                type="password"
+                                value={form.password}
+                                onChange={(value) => {
+                                    setForm({ ...form, password: value });
+                                }}
+                            />
+                            <button
+                                type="submit"
+                                disabled={auth.isPending}
+                                className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold transition hover:scale-[1.03] disabled:opacity-60"
+                            >
+                                {auth.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <ArrowRight className="h-4 w-4" />
+                                )}
+                                {mode === 'login' ? 'Entrar' : 'Criar e entrar'}
+                            </button>
+                            {auth.isError ? (
+                                <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
+                                    {auth.error.message}
                                 </p>
+                            ) : null}
+                        </form>
+
+                        <div className="mt-5 rounded-2xl border border-[#263247] bg-[#0B0F1A] p-4 text-sm">
+                            <div className="flex items-center gap-2 font-bold">
+                                <Mail className="h-4 w-4 text-[#22D3EE]" />
+                                {selectedAccount?.title}
                             </div>
-                        </CardContent>
-                    </Card>
+                            <p className="mt-2 leading-6 text-[#CBD5E1]">{selectedAccount?.description}</p>
+                            <p className="mt-3 text-[#94A3B8]">
+                                Senha demo: <strong className="text-white">password</strong>
+                            </p>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
         </main>
+    );
+}
+
+function AuthInput({
+    label,
+    value,
+    onChange,
+    type = 'text',
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    type?: 'text' | 'email' | 'password';
+}) {
+    return (
+        <label className="block">
+            <span className="mb-2 block text-xs font-semibold text-[#CBD5E1]">{label}</span>
+            <input
+                type={type}
+                value={value}
+                onChange={(event) => {
+                    onChange(event.target.value);
+                }}
+                className="h-12 w-full rounded-xl border border-[#263247] bg-[#060B1A] px-4 text-sm text-white outline-none transition placeholder:text-[#64748B] focus:border-[#22D3EE] focus:ring-2 focus:ring-[#8B5CF6]/30"
+            />
+        </label>
     );
 }
