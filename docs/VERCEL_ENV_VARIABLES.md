@@ -9,6 +9,7 @@ Significa que as variáveis NÃO foram salvas. Vamos fazer correto agora.
 ## 📍 Passo 1: Entrar no Vercel Certo
 
 **URL Exata:**
+
 ```
 https://vercel.com/dashboard/projects
 ```
@@ -24,6 +25,7 @@ https://vercel.com/dashboard/projects
 **IMPORTANTE: Deve estar na página do projeto**
 
 No topo da página, você verá:
+
 ```
 [Project] [Deployments] [Settings] [Analytics] [Monitoring]
                          ⬅️ CLIQUE AQUI
@@ -36,6 +38,7 @@ Se não ver, clique no menu `•••` (três pontinhos) no canto superior dire
 ## 🔑 Passo 3: Environment Variables (Menu Esquerdo)
 
 Após clicar em Settings, você verá um menu esquerdo com:
+
 ```
 General
 Environment Variables  ⬅️ CLIQUE AQUI
@@ -80,24 +83,26 @@ Você verá um formulário como este:
 ### Exatamente o que fazer:
 
 1. **Campo "Name":**
-   ```
-   VITE_SUPER_USER_EMAIL
-   ```
+
+    ```
+    VITE_SUPER_USER_EMAIL
+    ```
 
 2. **Campo "Value":**
-   ```
-   admin@invitely.local
-   ```
+
+    ```
+    admin@invitely.local
+    ```
 
 3. **Checkboxes "Environments":**
-   - ✅ Production
-   - ✅ Preview
-   - ✅ Development
+    - ✅ Production
+    - ✅ Preview
+    - ✅ Development
 
 4. **Clique no botão AZUL:**
-   ```
-   "Add Environment Variable"
-   ```
+    ```
+    "Add Environment Variable"
+    ```
 
 ---
 
@@ -115,19 +120,21 @@ VITE_SUPER_USER_EMAIL
 Agora repita o processo para a **segunda variável**:
 
 1. **Campo "Name":**
-   ```
-   VITE_SUPER_USER_PASSWORD
-   ```
+
+    ```
+    VITE_SUPER_USER_PASSWORD
+    ```
 
 2. **Campo "Value":**
-   ```
-   admin123456
-   ```
+
+    ```
+    admin123456
+    ```
 
 3. **Checkboxes:**
-   - ✅ Production
-   - ✅ Preview
-   - ✅ Development
+    - ✅ Production
+    - ✅ Preview
+    - ✅ Development
 
 4. **Clique "Add Environment Variable"**
 
@@ -158,10 +165,12 @@ Se vê isso, **PERFEITO!** ✅
 ## 🔄 Passo 7: Redeploy Automático (Deve Acontecer Sozinho)
 
 Após adicionar as variáveis, o Vercel pode:
+
 - **Opção 1 (Melhor):** Automatically redeploy (você verá uma notificação)
 - **Opção 2:** Você precisa fazer manualmente
 
 ### Se não fez automático:
+
 1. Vá em **Deployments** (no topo)
 2. Clique no **último deploy** (o topo da lista)
 3. Clique no botão **Redeploy** (canto superior direito)
@@ -174,20 +183,22 @@ Após adicionar as variáveis, o Vercel pode:
 Após o redeploy estar pronto (status: ✅ Ready):
 
 1. Acesse sua URL em produção:
-   ```
-   https://seu-site.vercel.app/login
-   ```
-   
-   **Onde encontrar a URL:**
-   - Vercel Dashboard → Projeto → Topo da página aparece a URL
+
+    ```
+    https://seu-site.vercel.app/login
+    ```
+
+    **Onde encontrar a URL:**
+    - Vercel Dashboard → Projeto → Topo da página aparece a URL
 
 2. Clique **"Login"**
 
 3. Digite:
-   ```
-   E-mail: admin@invitely.local
-   Senha: admin123456
-   ```
+
+    ```
+    E-mail: admin@invitely.local
+    Senha: admin123456
+    ```
 
 4. Clique **"Entrar"**
 
@@ -198,6 +209,7 @@ Após o redeploy estar pronto (status: ✅ Ready):
 ## 🆘 Se Ainda Não Funcionou
 
 ### Verificar 1: Variáveis Foram Salvas?
+
 ```
 Vercel → Project → Settings → Environment Variables
 
@@ -209,6 +221,7 @@ Você vê:
 Se NÃO vê, volte ao Passo 4 e tente novamente. **Certifique-se de clicar o botão "Add Environment Variable"**.
 
 ### Verificar 2: Fez Redeploy?
+
 ```
 Vercel → Deployments
 
@@ -221,7 +234,9 @@ Status do último deploy:
 Se tiver ❌ Failed, clique nele e veja o erro nos logs.
 
 ### Verificar 3: Aguardou 5 min?
+
 O Vercel leva ~5 minutos para:
+
 - Build
 - Deploy
 - Propagar para CDN
@@ -229,7 +244,9 @@ O Vercel leva ~5 minutos para:
 **Dica:** Abra em modo anônimo (Ctrl+Shift+Del ou Cmd+Shift+Del) para evitar cache.
 
 ### Verificar 4: URL Correta?
+
 Você deve usar:
+
 ```
 ✅ https://seu-site.vercel.app/login
 ❌ http://localhost:5173/login (isso é local)
@@ -241,6 +258,7 @@ Você deve usar:
 ## 📸 Capturas de Tela (Descrições)
 
 ### Tela de Environment Variables
+
 ```
 ┌────────────────────────────────────────┐
 │ Vercel Dashboard / Projeto / Settings  │
@@ -290,12 +308,14 @@ Você deve usar:
 ## 🎯 Próximo Passo
 
 Após tudo funcionar em produção:
+
 1. Testar cadastro normal
 2. Testar OTP por e-mail
 3. Testar convites
 4. Usar em produção!
 
 **Se ainda tiver problema, envie:**
+
 - Screenshot da tela Environment Variables do Vercel
 - URL do seu site em produção
 - Erro exato que aparece ao tentar logar

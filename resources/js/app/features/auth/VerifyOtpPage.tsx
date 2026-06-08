@@ -157,8 +157,8 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
                             Confirme seu e-mail com um código.
                         </h1>
                         <p className="mt-5 max-w-full text-base leading-8 text-[#CBD5E1] sm:max-w-2xl">
-                            Enviamos um código de 6 dígitos para o seu e-mail. Digite o código abaixo para confirmar
-                            sua identidade e acessar sua conta.
+                            Enviamos um código de 6 dígitos para o seu e-mail. Digite o código abaixo para confirmar sua
+                            identidade e acessar sua conta.
                         </p>
                     </motion.div>
                 </div>
@@ -174,7 +174,9 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
                             <Mail className="h-5 w-5 text-[#22D3EE]" />
                             <div>
                                 <h2 className="text-xl font-bold">Verificação de E-mail</h2>
-                                <p className="mt-1 text-sm text-[#94A3B8]">Use o código de 6 dígitos enviado por e-mail</p>
+                                <p className="mt-1 text-sm text-[#94A3B8]">
+                                    Use o código de 6 dígitos enviado por e-mail
+                                </p>
                             </div>
                         </div>
 
@@ -227,7 +229,9 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
                                     </div>
                                     <button
                                         type="submit"
-                                        disabled={!email.includes('@') || requestOtp.isPending || !isSupabaseConfigured()}
+                                        disabled={
+                                            !email.includes('@') || requestOtp.isPending || !isSupabaseConfigured()
+                                        }
                                         className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-4 text-sm font-bold text-white transition hover:scale-[1.03] disabled:opacity-50"
                                     >
                                         {requestOtp.isPending ? (

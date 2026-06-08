@@ -143,10 +143,7 @@ export function CreateEventForm({ onCancel }: CreateEventFormProps) {
                 </motion.div>
             )}
 
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-6 rounded-2xl border border-[#263247] bg-[#121827] p-6"
-            >
+            <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-[#263247] bg-[#121827] p-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
                     <h3 className="font-semibold text-white">Informações Básicas</h3>
@@ -269,9 +266,7 @@ export function CreateEventForm({ onCancel }: CreateEventFormProps) {
                             type="url"
                             placeholder="https://open.spotify.com/playlist/..."
                             value={form.spotifyPlaylistUrl}
-                            onChange={(e) =>
-                                setForm((prev) => ({ ...prev, spotifyPlaylistUrl: e.target.value }))
-                            }
+                            onChange={(e) => setForm((prev) => ({ ...prev, spotifyPlaylistUrl: e.target.value }))}
                             className="mt-2 h-11 w-full rounded-xl border border-[#263247] bg-[#0B0F1A] px-4 text-white outline-none transition focus:border-[#22D3EE]"
                             disabled={createEvent.isPending}
                         />

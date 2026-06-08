@@ -17,16 +17,19 @@ Para fazer super user funcionar em produção no Vercel:
 ## 📋 Variáveis de Ambiente no Vercel
 
 ### Campo 1: `VITE_SUPER_USER_EMAIL`
+
 ```
 admin@invitely.local
 ```
 
 ### Campo 2: `VITE_SUPER_USER_PASSWORD`
+
 ```
 admin123456
 ```
 
 ### Exemplo Visual:
+
 ```
 Name: VITE_SUPER_USER_EMAIL
 Value: admin@invitely.local
@@ -36,6 +39,7 @@ Value: admin123456
 ```
 
 ### Importante:
+
 - ✅ Adicionar em **Vercel → Project Settings → Environment Variables**
 - ✅ Selecionar todos os ambientes: **Production, Preview, Development**
 - ✅ Fazer redeploy após adicionar
@@ -45,6 +49,7 @@ Value: admin123456
 ## 🔗 Passo a Passo (Com Screenshots em Mente)
 
 ### Passo 1: Fazer Push para GitHub
+
 ```bash
 cd c:\Users\victor.brutti\Desktop\ConviteFaculdade
 git add -A
@@ -53,31 +58,37 @@ git push origin main
 ```
 
 ### Passo 2: Ir no Vercel
+
 1. Acesse https://vercel.com/dashboard
 2. Clique no seu projeto (Invitely)
 3. Vá em **Settings** (engrenagem no topo)
 4. Clique em **Environment Variables** (lado esquerdo)
 
 ### Passo 3: Adicionar as Variáveis
+
 **Primeira variável:**
+
 - Name: `VITE_SUPER_USER_EMAIL`
 - Value: `admin@invitely.local`
 - Environments: **✓ Production ✓ Preview ✓ Development**
 - Clique **Add**
 
 **Segunda variável:**
+
 - Name: `VITE_SUPER_USER_PASSWORD`
 - Value: `admin123456`
 - Environments: **✓ Production ✓ Preview ✓ Development**
 - Clique **Add**
 
 ### Passo 4: Fazer Redeploy
+
 1. Vá em **Deployments** (no topo)
 2. Clique no último deploy
 3. Clique **Redeploy** (botão azul)
 4. Aguarde ~5 minutos
 
 ### Passo 5: Testar
+
 ```
 1. Acesse: https://seu-site.vercel.app/login
 2. Clique "Login"
@@ -101,6 +112,7 @@ VITE_SITE_URL=https://seu-site.vercel.app
 ```
 
 ### Onde pegar?
+
 - **VITE_SUPABASE_URL** → Supabase → Settings → API
 - **VITE_SUPABASE_ANON_KEY** → Supabase → Settings → API
 - **VITE_API_URL** → Seu backend (Laravel) - em produção
@@ -111,6 +123,7 @@ VITE_SITE_URL=https://seu-site.vercel.app
 ## 🆘 Troubleshooting
 
 ### "Super user não funciona em prod"
+
 ```
 Verificar:
 1. ✅ Vercel → Settings → Environment Variables
@@ -121,6 +134,7 @@ Verificar:
 ```
 
 ### "Erro ao fazer login"
+
 ```
 Verificar:
 1. ✅ Supabase está online?
@@ -130,6 +144,7 @@ Verificar:
 ```
 
 ### "Página em branco"
+
 ```
 Verificar:
 1. ✅ npm run build funcionou?
@@ -159,6 +174,7 @@ Verificar:
 ## 🎯 Teste Final em Prod
 
 ### Cenário 1: Super User
+
 ```
 1. Acesse: https://seu-site.vercel.app/login
 2. Clique "Login"
@@ -168,6 +184,7 @@ Verificar:
 ```
 
 ### Cenário 2: Cadastro Normal
+
 ```
 1. Clique "Cadastro"
 2. Preencha com seu email real
@@ -186,12 +203,14 @@ Verificar:
 Quando não precisar mais do super user em produção:
 
 ### Opção 1: Remover do Vercel
+
 1. Vercel → Project Settings → Environment Variables
 2. Clique no ❌ ao lado de `VITE_SUPER_USER_EMAIL`
 3. Clique no ❌ ao lado de `VITE_SUPER_USER_PASSWORD`
 4. Redeploy
 
 ### Opção 2: Deixar com Senha Complexa
+
 ```
 Email: admin@invitely.local
 Password: gEk9@mL2$pQ4!xW8nV3(zH6+jK1%vB5)
@@ -204,16 +223,19 @@ Ninguém vai adivinhar isso!
 ## 📞 Comandos Úteis
 
 ### Verificar se build funciona localmente
+
 ```bash
 npm run build
 ```
 
 ### Ver logs do build
+
 ```bash
 # No Vercel → Deployments → Clique no deploy → Logs
 ```
 
 ### Revert de um deploy (se deu ruim)
+
 ```bash
 # No Vercel → Deployments → Clique em um deploy anterior → Redeploy
 ```

@@ -218,7 +218,11 @@ export function AdminDashboard() {
                         <div>
                             <p className="text-sm text-[#94A3B8]">Aqui está o resumo dos seus eventos.</p>
                             <h1 className="mt-1 text-2xl font-extrabold tracking-normal sm:text-3xl">
-                                Bem-vindo{user.name?.toLowerCase().includes('maria') || user.name?.toLowerCase().includes('ana') ? 'a' : ''}, {user.name || 'Usuário'}!
+                                Bem-vindo
+                                {user.name?.toLowerCase().includes('maria') || user.name?.toLowerCase().includes('ana')
+                                    ? 'a'
+                                    : ''}
+                                , {user.name || 'Usuário'}!
                             </h1>
                         </div>
                         <div className="flex flex-wrap gap-2">

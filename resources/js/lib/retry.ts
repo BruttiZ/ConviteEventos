@@ -17,11 +17,7 @@ export async function retryWithExponentialBackoff<T>(
         maxDelayMs = 10000,
         shouldRetry = (error) => {
             const message = error.message.toLowerCase();
-            return (
-                message.includes('rate limit') ||
-                message.includes('429') ||
-                message.includes('too many requests')
-            );
+            return message.includes('rate limit') || message.includes('429') || message.includes('too many requests');
         },
     } = options;
 

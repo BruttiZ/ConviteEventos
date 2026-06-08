@@ -7,14 +7,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
-class InviteController extends Controller
-{
+class InviteController extends Controller {
     /**
      * Get invite details by token
      * No authentication required - public endpoint
      */
-    public function show(Request $request, string $token): JsonResponse
-    {
+    public function show(Request $request, string $token): JsonResponse {
         $guest = Guest::where('invite_token', $token)
             ->with('event')
             ->first();
@@ -38,8 +36,7 @@ class InviteController extends Controller
      * Accept an invite by token
      * No authentication required - public endpoint
      */
-    public function accept(Request $request, string $token): JsonResponse
-    {
+    public function accept(Request $request, string $token): JsonResponse {
         $guest = Guest::where('invite_token', $token)->first();
 
         if (!$guest) {
@@ -68,8 +65,7 @@ class InviteController extends Controller
      * Reject an invite by token
      * No authentication required - public endpoint
      */
-    public function reject(Request $request, string $token): JsonResponse
-    {
+    public function reject(Request $request, string $token): JsonResponse {
         $guest = Guest::where('invite_token', $token)->first();
 
         if (!$guest) {

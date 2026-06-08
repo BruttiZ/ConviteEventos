@@ -103,18 +103,21 @@ export function AuthPage() {
 
     const auth = useMutation({
         mutationFn: async (): Promise<AuthMutationResult> => {
-            const supabase = getSupabaseClient();
             setStatusMessage(null);
             setConfirmationError(null);
 
-            // Check for super user credentials (works in dev and prod if configured)
+            // Check for super user credentials FIRST (works even without Supabase)
             const superUserEmail = import.meta.env.VITE_SUPER_USER_EMAIL;
             const superUserPassword = import.meta.env.VITE_SUPER_USER_PASSWORD;
             const isSuperUserAttempt =
-                mode === 'login' && superUserEmail && form.email === superUserEmail && form.password === superUserPassword;
+                mode === 'login' &&
+                superUserEmail &&
+                form.email?.trim() === superUserEmail?.trim() &&
+                form.password === superUserPassword;
 
             if (isSuperUserAttempt) {
-                // Return mock super user session
+                console.log('✅ Super user login detected');
+                // Return mock super user session (no Supabase needed)
                 return {
                     kind: 'authenticated',
                     session: toAuthSession(
@@ -126,6 +129,16 @@ export function AuthPage() {
                     ),
                 };
             }
+
+            // For other modes, Supabase is required
+            if (!isSupabaseConfigured()) {
+                throw new Error(
+                    'Supabase não está configurado. Use o Super User (admin@invitely.local) para testar, ' +
+                    'ou configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.',
+                );
+            }
+
+            const supabase = getSupabaseClient();
 
             if (mode === 'register') {
                 if (!isRegisterValid) {
@@ -249,7 +262,7 @@ export function AuthPage() {
 
     function submit(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!canSubmit || !isSupabaseConfigured()) {
+        if (!canSubmit) {
             return;
         }
 
@@ -354,10 +367,15 @@ export function AuthPage() {
                             </p>
                         </div>
 
-                        {!isSupabaseConfigured() ? (
+                        {!isSupabaseConfigured() && !import.meta.env.VITE_SUPER_USER_EMAIL ? (
                             <FeedbackMessage
                                 tone="warning"
-                                message="Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para habilitar login e cadastro."
+                                message="Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para habilitar login e cadastro normal, ou use o Super User (admin@invitely.local)."
+                            />
+                        ) : !isSupabaseConfigured() && mode === 'register' ? (
+                            <FeedbackMessage
+                                tone="warning"
+                                message="Cadastro normal requer Supabase configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY ou use o Super User."
                             />
                         ) : null}
 
@@ -461,7 +479,7 @@ export function AuthPage() {
                             ) : null}
                             <button
                                 type="submit"
-                                disabled={auth.isPending || !canSubmit || !isSupabaseConfigured()}
+                                disabled={auth.isPending || !canSubmit || (mode === 'register' && !isSupabaseConfigured())}
                                 className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {auth.isPending ? (
