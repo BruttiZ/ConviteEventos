@@ -10,6 +10,7 @@
 - Adiciona build estatico para Vercel sem quebrar o fluxo Laravel/Docker.
 - Substitui as contas hardcoded da tela de login por cadastro e autenticacao reais via Supabase Auth.
 - Melhora o cadastro com confirmacao de senha, medidor de senha forte, botoes para visualizar senha e redirect correto de confirmacao por e-mail no Supabase.
+- Adiciona RSVP publico sem login com codigo de 6 digitos por e-mail, expiracao, rate limit e criacao/atualizacao de convidados.
 
 Todas as mudancas relevantes deste projeto serao documentadas neste arquivo.
 

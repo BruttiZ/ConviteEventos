@@ -20,6 +20,7 @@ resources/js/
 - `/`: landing page SaaS com hero, mockup de dashboard e benefícios.
 - `/login`: tela de login/cadastro com tres perfis de teste.
 - `/events/invitely-launch-night`: convite publico com RSVP reativo, compartilhamento, tema, feedback visual e QR Code.
+- `/e/invitely-launch-night`: alias curto para convite publico.
 - `/admin`: dashboard interativo que muda a navegacao conforme o papel do usuario.
 
 ## Design system visual
@@ -63,6 +64,16 @@ A tela de cadastro exige senha forte antes de chamar o Supabase:
 - confirmacao de senha igual ao primeiro campo.
 
 O formulario tambem oferece botao de visibilidade de senha e medidor visual de seguranca. Quando a confirmacao de e-mail esta ativa no Supabase, o cadastro envia `emailRedirectTo` com a origem atual do app para evitar links apontando para uma porta local incorreta.
+
+## RSVP publico sem senha
+
+O convite publico usa um fluxo em duas etapas:
+
+1. O convidado informa nome e e-mail.
+2. A API envia um codigo de 6 digitos por e-mail.
+3. O convidado escolhe `Vou participar` ou `Nao vou`, informa o codigo e registra a resposta.
+
+Esse fluxo nao cria usuario com senha. Ele valida posse do e-mail e registra ou atualiza `guests` e `rsvps` pelo backend. No evento fallback demo, qualquer codigo com 6 digitos e aceito apenas para manter a experiencia navegavel sem API.
 
 ## Principios
 

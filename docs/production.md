@@ -66,13 +66,21 @@ Configure:
 ```env
 VITE_API_URL=https://sua-api-laravel.com
 VITE_APP_NAME=Invitely
+VITE_SITE_URL=https://seu-projeto.vercel.app
+NEXT_PUBLIC_SITE_URL=https://seu-projeto.vercel.app
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-chave-publicavel
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_ANON_KEY=sua-chave-publicavel
 ```
 
 `VITE_API_URL` e necessario quando a SPA publicada na Vercel precisa consumir uma API Laravel publicada separadamente.
 
 `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sao necessarios para login e cadastro reais com Supabase Auth. Use a chave publica/publishable do Supabase, nunca a `service_role`.
+
+`VITE_SITE_URL` e `NEXT_PUBLIC_SITE_URL` documentam a URL publica usada nos links de e-mail. No app Vite, `VITE_SITE_URL` e a variavel lida pelo browser. `NEXT_PUBLIC_SITE_URL` fica disponivel para compatibilidade com uma futura migracao Next.js.
+
+`SUPABASE_URL` e `SUPABASE_ANON_KEY` sao usadas pelo backend Laravel quando ele precisa chamar a API publica do Supabase, por exemplo para reenviar confirmacao de cadastro.
 
 ## Supabase Auth
 
@@ -96,6 +104,29 @@ http://localhost:4173/**
 O cadastro envia `emailRedirectTo` usando a origem atual do app. Em producao, isso faz o e-mail voltar para a URL da Vercel. Em desenvolvimento, volta para a porta local que estiver aberta.
 
 Se o navegador mostrar `otp_expired`, o link de confirmacao expirou ou ja foi usado. Gere um novo cadastro, solicite um novo e-mail de confirmacao no Supabase ou desative temporariamente a confirmacao de e-mail apenas para testes locais.
+
+Se houver templates de e-mail customizados no Supabase, revise `Authentication > Email Templates`. Use variaveis oficiais do Supabase para manter o link de confirmacao gerado pela plataforma, e evite inserir `localhost` manualmente no template.
+
+## RSVP publico com codigo
+
+O RSVP publico sem senha usa a tabela `public_rsvp_otps`. No Laravel, rode as migrations normalmente:
+
+```bash
+docker compose exec app php artisan migrate
+```
+
+Se o banco estiver hospedado no Supabase e voce preferir criar a tabela manualmente, use o script:
+
+```text
+docs/sql/public_rsvp_otps.sql
+```
+
+Recomendacao de seguranca:
+
+- mantenha RLS habilitado na tabela de OTP;
+- nao crie policy anon/authenticated para leitura ou escrita direta;
+- gere e valide codigos apenas pela API confiavel;
+- o codigo deve expirar em 10 minutos e e salvo apenas como hash.
 
 O cadastro publico salva no metadata:
 

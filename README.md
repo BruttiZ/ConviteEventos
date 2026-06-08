@@ -34,6 +34,7 @@ O redesign atual usa uma estética dark premium inspirada em Linear, Stripe, Ver
 
 - Landing page SaaS moderna com hero, mockup flutuante de dashboard e cards de benefícios.
 - Convite público premium com palco visual, RSVP reativo, feedback de confirmação, countdown, galeria e QR Code.
+- RSVP público sem login com código de 6 dígitos por e-mail, expiração de 10 minutos e atualização de convidados/RSVP.
 - Formulário de confirmação com nome, e-mail, acompanhantes com botões `+` e `-`, mensagem opcional, confirmar e recusar.
 - Login/cadastro real com Supabase Auth e perfis iniciais de organizador ou convidado.
 - Dashboard responsivo com sidebar no desktop, bottom navigation no mobile, métricas, gráfico de linha, distribuição de RSVP e cards de eventos.
@@ -115,6 +116,7 @@ O frontend é organizado por features:
 - `resources/js/app/features/auth`: login e cadastro reais com Supabase Auth.
 - `resources/js/app/features/admin`: dashboard operacional.
 - `resources/js/app/features/public`: convite público e RSVP.
+- `docs/sql/public_rsvp_otps.sql`: script SQL para criar a tabela de OTP do RSVP público no Supabase.
 
 ## Fluxo de portfólio
 

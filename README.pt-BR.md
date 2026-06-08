@@ -46,6 +46,7 @@ O app foi redesenhado para uma estética dark premium de SaaS moderno:
 - Dashboard com sidebar desktop, bottom navigation mobile, métricas, gráfico de linha e distribuição de RSVP.
 - Eventos em cards com imagem, status, data, local, confirmados, taxa de RSVP e CTA.
 - Convite público com imagem de fundo, overlay escuro, countdown, formulário confortável e QR Code.
+- RSVP publico sem login com codigo de 6 digitos por e-mail, expiracao de 10 minutos e atualizacao de convidados/RSVP.
 - Paleta baseada em `#060B1A`, `#0B0F1A`, `#121827`, `#263247`, `#8B5CF6`, `#22D3EE` e `#0EA5E9`.
 
 ## Servicos Docker

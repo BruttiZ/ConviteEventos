@@ -31,7 +31,17 @@ import { apiUrl } from '../../../lib/api';
 import { PublicEvent } from './types';
 
 type RsvpStatus = 'accepted' | 'declined';
+type RsvpStep = 'details' | 'code' | 'done';
 type CountdownItem = [label: string, value: number];
+
+type RsvpFormState = {
+    invite_token: string;
+    name: string;
+    email: string;
+    code: string;
+    companions: number;
+    message: string;
+};
 
 const fallbackHeroImage =
     'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1800&q=85';
@@ -47,7 +57,7 @@ const demoEvent: PublicEvent = {
     timezone: 'America/Sao_Paulo',
     venue: {
         name: 'Atelier Vista',
-        address: 'Av. Paulista, 1000 - São Paulo, SP',
+        address: 'Av. Paulista, 1000 - Sao Paulo, SP',
         latitude: null,
         longitude: null,
     },
@@ -55,18 +65,18 @@ const demoEvent: PublicEvent = {
     hero: {
         eyebrow: 'Convite digital',
         title: 'Invitely Launch Night',
-        subtitle: 'Uma noite para celebrar produto, comunidade e experiências memoráveis.',
+        subtitle: 'Uma noite para celebrar produto, comunidade e experiencias memoraveis.',
         image_url: fallbackHeroImage,
     },
     content: {
         hosts: ['Equipe Invitely'],
         schedule: [
-            { time: '19:00', title: 'Recepção' },
-            { time: '20:30', title: 'Apresentação' },
-            { time: '21:30', title: 'Celebração' },
+            { time: '19:00', title: 'Recepcao' },
+            { time: '20:30', title: 'Apresentacao' },
+            { time: '21:30', title: 'Celebracao' },
         ],
         dress_code: 'Smart casual',
-        note: 'Use seu QR Code na entrada para check-in rápido.',
+        note: 'Use seu QR Code na entrada para check-in rapido.',
     },
     theme: { mode: 'dark', primary: '#8B5CF6', accent: '#22D3EE' },
     gallery: [
@@ -76,7 +86,7 @@ const demoEvent: PublicEvent = {
         },
         {
             url: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1200&q=80',
-            alt: 'Celebração do evento',
+            alt: 'Celebracao do evento',
         },
         {
             url: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80',
@@ -113,13 +123,16 @@ function useCountdown(date: string): CountdownItem[] {
 export function PublicEventPage() {
     const { slug = 'invitely-launch-night' } = useParams();
     const session = getStoredSession();
-    const [notice, setNotice] = useState('Convite carregado. Revise seus dados e confirme sua resposta.');
+    const [notice, setNotice] = useState('Informe seu e-mail para receber um codigo de verificacao.');
     const [responseStatus, setResponseStatus] = useState<RsvpStatus | null>(null);
-    const [form, setForm] = useState({
+    const [rsvpStep, setRsvpStep] = useState<RsvpStep>('details');
+    const [desiredStatus, setDesiredStatus] = useState<RsvpStatus>('accepted');
+    const [form, setForm] = useState<RsvpFormState>({
         invite_token: 'demo-invite-token',
-        name: 'João da Silva',
-        email: 'joao@email.com',
-        companions: 2,
+        name: '',
+        email: '',
+        code: '',
+        companions: 0,
         message: '',
     });
 
@@ -127,20 +140,20 @@ export function PublicEventPage() {
         queryKey: ['public-event', slug],
         queryFn: async () => {
             const response = await fetch(apiUrl(`/api/v1/events/${slug}`));
+
             if (!response.ok) {
                 return demoEvent;
             }
+
             const payload = (await response.json()) as { data: PublicEvent };
+
             return payload.data;
         },
     });
 
     const event = eventQuery.data ?? demoEvent;
     const countdown = useCountdown(event.starts_at);
-    const heroImage =
-        event.hero.image_url && !event.hero.image_url.includes('1519167758481')
-            ? event.hero.image_url
-            : fallbackHeroImage;
+    const heroImage = event.hero.image_url ?? fallbackHeroImage;
     const accepted = event.metrics?.accepted ?? fallbackMetrics.accepted;
     const invited = event.metrics?.invited ?? fallbackMetrics.invited;
     const rsvpRate = Math.min(100, Math.round((accepted / Math.max(1, invited)) * 100));
@@ -154,45 +167,101 @@ export function PublicEventPage() {
         minute: '2-digit',
     }).format(new Date(event.starts_at));
 
-    const rsvp = useMutation({
-        mutationFn: async (status: RsvpStatus) => {
-            const response = await fetch(apiUrl(`/api/v1/events/${event.slug}/rsvp`), {
+    const requestCode = useMutation({
+        mutationFn: async () => {
+            if (event.id === 'demo') {
+                await new Promise((resolve) => window.setTimeout(resolve, 500));
+
+                return { message: 'Codigo enviado. No modo demo, use qualquer codigo com 6 digitos.' };
+            }
+
+            const response = await fetch(apiUrl('/api/v1/rsvp/request-code'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({
-                    invite_token: form.invite_token,
-                    companions: form.companions,
-                    message: `${form.name} <${form.email}> - ${form.message}`,
-                    status,
+                    event_id: event.id,
+                    email: form.email,
                 }),
             });
 
             if (!response.ok) {
-                throw new Error('Não foi possível registrar sua resposta agora.');
+                const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+                throw new Error(payload?.message ?? 'Nao foi possivel enviar o codigo agora.');
             }
 
-            return (await response.json()) as unknown;
+            return (await response.json()) as { message: string };
         },
-        onSuccess: (_payload, status) => {
+        onSuccess: (payload) => {
+            setRsvpStep('code');
+            setNotice(payload.message);
+        },
+    });
+
+    const verifyCode = useMutation({
+        mutationFn: async (status: RsvpStatus) => {
+            if (event.id === 'demo') {
+                await new Promise((resolve) => window.setTimeout(resolve, 500));
+
+                return {
+                    message: status === 'accepted' ? 'Presenca confirmada!' : 'Voce recusou o convite.',
+                };
+            }
+
+            const response = await fetch(apiUrl('/api/v1/rsvp/verify-code'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    event_id: event.id,
+                    email: form.email,
+                    code: form.code,
+                    status,
+                    name: form.name,
+                    companions: form.companions,
+                    message: form.message,
+                }),
+            });
+
+            if (!response.ok) {
+                const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+                throw new Error(payload?.message ?? 'Nao foi possivel validar o codigo agora.');
+            }
+
+            return (await response.json()) as { message: string };
+        },
+        onSuccess: (payload, status) => {
             setResponseStatus(status);
-            setNotice(
-                status === 'accepted'
-                    ? 'Presença confirmada. Seu QR Code já está pronto para o check-in.'
-                    : 'Resposta registrada. Você poderá alterar sua presença se necessário.',
-            );
+            setRsvpStep('done');
+            setNotice(payload.message);
         },
     });
 
     const isFormReady = form.name.trim().length > 2 && form.email.includes('@');
+    const isCodeReady = /^\d{6}$/.test(form.code);
+    const isBusy = requestCode.isPending || verifyCode.isPending;
+    const errorMessage = requestCode.error?.message ?? verifyCode.error?.message;
 
     function submit(eventSubmit: SyntheticEvent<HTMLFormElement>) {
         eventSubmit.preventDefault();
+
         if (!isFormReady) {
-            setNotice('Preencha nome e e-mail para registrar sua resposta.');
+            setNotice('Preencha nome e e-mail para receber seu codigo de verificacao.');
 
             return;
         }
-        rsvp.mutate('accepted');
+
+        if (rsvpStep === 'details') {
+            requestCode.mutate();
+
+            return;
+        }
+
+        if (!isCodeReady) {
+            setNotice('Digite o codigo de 6 digitos enviado para o seu e-mail.');
+
+            return;
+        }
+
+        verifyCode.mutate(desiredStatus);
     }
 
     function updateCompanions(direction: 1 | -1) {
@@ -211,7 +280,7 @@ export function PublicEventPage() {
         }
 
         void navigator.clipboard.writeText(window.location.href);
-        setNotice('Link do convite copiado para a área de transferência.');
+        setNotice('Link do convite copiado para a area de transferencia.');
     }
 
     return (
@@ -286,7 +355,7 @@ export function PublicEventPage() {
                                         href="#confirmar"
                                         className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-5 text-sm font-bold transition hover:scale-[1.03]"
                                     >
-                                        Confirmar presença <ArrowRight className="h-4 w-4" />
+                                        Confirmar presenca <ArrowRight className="h-4 w-4" />
                                     </a>
                                     <a
                                         href="#detalhes"
@@ -312,7 +381,7 @@ export function PublicEventPage() {
 
                                 <div className="rounded-2xl border border-[#263247] bg-[#121827]/70 p-4">
                                     <div className="mb-3 flex items-center justify-between text-sm">
-                                        <span className="font-semibold">Confirmações</span>
+                                        <span className="font-semibold">Confirmacoes</span>
                                         <span className="text-[#22D3EE]">{rsvpRate}% RSVP</span>
                                     </div>
                                     <div className="h-2 overflow-hidden rounded-full bg-[#263247]">
@@ -331,54 +400,32 @@ export function PublicEventPage() {
                     <RsvpCard
                         form={form}
                         notice={notice}
+                        step={rsvpStep}
+                        desiredStatus={desiredStatus}
                         isFormReady={isFormReady}
-                        isPending={rsvp.isPending}
-                        isError={rsvp.isError}
-                        errorMessage={rsvp.error?.message}
+                        isCodeReady={isCodeReady}
+                        isPending={isBusy}
+                        errorMessage={errorMessage}
                         responseStatus={responseStatus}
                         inviteToken={form.invite_token}
+                        setDesiredStatus={setDesiredStatus}
                         setForm={setForm}
                         submit={submit}
-                        decline={() => {
-                            rsvp.mutate('declined');
+                        requestNewCode={() => {
+                            requestCode.mutate();
                         }}
                         updateCompanions={updateCompanions}
                     />
                 </div>
             </section>
 
-            <AnimatePresence>
-                {responseStatus ? (
-                    <motion.div
-                        initial={{ opacity: 0, y: -16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -16 }}
-                        className="fixed left-1/2 top-4 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-[#263247] bg-[#0B0F1A]/95 p-4 shadow-2xl backdrop-blur"
-                    >
-                        <div className="flex items-start gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#22C55E]/15 text-[#22C55E]">
-                                {responseStatus === 'accepted' ? (
-                                    <CheckCircle2 className="h-5 w-5" />
-                                ) : (
-                                    <XCircle className="h-5 w-5 text-[#F59E0B]" />
-                                )}
-                            </div>
-                            <div>
-                                <p className="font-bold">
-                                    {responseStatus === 'accepted' ? 'Presença confirmada' : 'Resposta registrada'}
-                                </p>
-                                <p className="mt-1 text-sm leading-6 text-[#CBD5E1]">{notice}</p>
-                            </div>
-                        </div>
-                    </motion.div>
-                ) : null}
-            </AnimatePresence>
+            <SuccessToast responseStatus={responseStatus} notice={notice} />
 
             <section
                 id="detalhes"
                 className="mx-auto grid max-w-7xl gap-5 px-4 py-10 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8"
             >
-                <Panel title="Programação">
+                <Panel title="Programacao">
                     <div className="grid gap-3">
                         {event.content.schedule?.map((item) => (
                             <div
@@ -411,7 +458,7 @@ export function PublicEventPage() {
                             <QRCodeSVG value={`${window.location.origin}/check-in/${form.invite_token}`} size={104} />
                         </div>
                         <p className="text-sm leading-6 text-[#94A3B8]">
-                            Token seguro para validação rápida na entrada do evento.
+                            Token seguro para validacao rapida na entrada do evento.
                         </p>
                     </div>
                 </Panel>
@@ -441,7 +488,7 @@ export function PublicEventPage() {
                         href="#confirmar"
                         className="inline-flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold"
                     >
-                        Confirmar presença
+                        Confirmar presenca
                     </a>
                     <button
                         type="button"
@@ -508,30 +555,39 @@ function EventHeroCard({
 function RsvpCard({
     form,
     notice,
+    step,
+    desiredStatus,
     isFormReady,
+    isCodeReady,
     isPending,
-    isError,
     errorMessage,
     responseStatus,
     inviteToken,
+    setDesiredStatus,
     setForm,
     submit,
-    decline,
+    requestNewCode,
     updateCompanions,
 }: {
-    form: { invite_token: string; name: string; email: string; companions: number; message: string };
+    form: RsvpFormState;
     notice: string;
+    step: RsvpStep;
+    desiredStatus: RsvpStatus;
     isFormReady: boolean;
+    isCodeReady: boolean;
     isPending: boolean;
-    isError: boolean;
     errorMessage?: string;
     responseStatus: RsvpStatus | null;
     inviteToken: string;
-    setForm: (form: { invite_token: string; name: string; email: string; companions: number; message: string }) => void;
+    setDesiredStatus: (status: RsvpStatus) => void;
+    setForm: (form: RsvpFormState) => void;
     submit: (eventSubmit: SyntheticEvent<HTMLFormElement>) => void;
-    decline: () => void;
+    requestNewCode: () => void;
     updateCompanions: (direction: 1 | -1) => void;
 }) {
+    const submitLabel =
+        step === 'details' ? 'Receber codigo' : desiredStatus === 'accepted' ? 'Confirmar presenca' : 'Recusar convite';
+
     return (
         <motion.form
             id="confirmar"
@@ -545,8 +601,8 @@ function RsvpCard({
 
             <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-normal text-[#22D3EE]">RSVP</p>
-                    <h2 className="mt-2 text-2xl font-extrabold">Confirmar presença</h2>
+                    <p className="text-xs font-semibold uppercase tracking-normal text-[#22D3EE]">RSVP seguro</p>
+                    <h2 className="mt-2 text-2xl font-extrabold">Confirmar presenca</h2>
                     <p className="mt-2 text-sm leading-6 text-[#94A3B8]">{notice}</p>
                 </div>
                 <div className="hidden rounded-2xl bg-white p-2 sm:block">
@@ -556,16 +612,18 @@ function RsvpCard({
 
             <div className="mb-5 grid grid-cols-3 gap-2">
                 <StepPill active icon={UsersRound} label="Dados" />
-                <StepPill active={isFormReady} icon={ShieldCheck} label="Validado" />
-                <StepPill active={responseStatus === 'accepted'} icon={QrCode} label="QR Code" />
+                <StepPill active={step !== 'details'} icon={ShieldCheck} label="Codigo" />
+                <StepPill active={step === 'done'} icon={QrCode} label="Resposta" />
             </div>
 
             <div className="mb-5 grid grid-cols-2 gap-2">
                 <button
-                    type="submit"
-                    disabled={isPending}
+                    type="button"
+                    onClick={() => {
+                        setDesiredStatus('accepted');
+                    }}
                     className={
-                        responseStatus === 'accepted'
+                        desiredStatus === 'accepted'
                             ? 'h-12 rounded-xl border border-[#22C55E] bg-[#22C55E]/15 text-sm font-bold text-[#BBF7D0]'
                             : 'h-12 rounded-xl border border-[#263247] bg-[#121827] text-sm font-bold text-[#CBD5E1] transition hover:border-[#22D3EE]/70'
                     }
@@ -574,15 +632,16 @@ function RsvpCard({
                 </button>
                 <button
                     type="button"
-                    onClick={decline}
-                    disabled={isPending}
+                    onClick={() => {
+                        setDesiredStatus('declined');
+                    }}
                     className={
-                        responseStatus === 'declined'
+                        desiredStatus === 'declined'
                             ? 'h-12 rounded-xl border border-[#F59E0B] bg-[#F59E0B]/15 text-sm font-bold text-[#FDE68A]'
                             : 'h-12 rounded-xl border border-[#263247] bg-[#121827] text-sm font-bold text-[#CBD5E1] transition hover:border-[#F59E0B]/70'
                     }
                 >
-                    Não vou
+                    Nao vou
                 </button>
             </div>
 
@@ -591,6 +650,7 @@ function RsvpCard({
                     icon={UsersRound}
                     label="Nome completo"
                     value={form.name}
+                    disabled={step !== 'details'}
                     onChange={(value) => {
                         setForm({ ...form, name: value });
                     }}
@@ -600,10 +660,23 @@ function RsvpCard({
                     label="E-mail"
                     type="email"
                     value={form.email}
+                    disabled={step !== 'details'}
                     onChange={(value) => {
                         setForm({ ...form, email: value });
                     }}
                 />
+                {step !== 'details' ? (
+                    <InviteInput
+                        icon={ShieldCheck}
+                        label="Codigo de 6 digitos"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={form.code}
+                        onChange={(value) => {
+                            setForm({ ...form, code: value.replace(/\D/g, '').slice(0, 6) });
+                        }}
+                    />
+                ) : null}
                 <div>
                     <label className="mb-2 block text-xs font-semibold text-[#CBD5E1]">Acompanhantes</label>
                     <div className="grid grid-cols-[52px_1fr_52px] overflow-hidden rounded-xl border border-[#263247] bg-[#060B1A]">
@@ -648,12 +721,22 @@ function RsvpCard({
 
                 <button
                     type="submit"
-                    disabled={isPending || !isFormReady}
+                    disabled={isPending || !isFormReady || (step !== 'details' && !isCodeReady)}
                     className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] text-sm font-bold transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-55"
                 >
                     {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Confirmar resposta
+                    {submitLabel}
                 </button>
+                {step === 'code' ? (
+                    <button
+                        type="button"
+                        disabled={isPending}
+                        onClick={requestNewCode}
+                        className="h-11 rounded-xl border border-[#263247] text-sm font-bold text-[#22D3EE] transition hover:border-[#22D3EE]/70 disabled:opacity-60"
+                    >
+                        Reenviar codigo
+                    </button>
+                ) : null}
             </div>
 
             <AnimatePresence>
@@ -668,12 +751,12 @@ function RsvpCard({
                             <PartyPopper className="mt-0.5 h-5 w-5 shrink-0 text-[#22C55E]" />
                             <div>
                                 <p className="font-bold">
-                                    {responseStatus === 'accepted' ? 'Tudo certo para o evento.' : 'Resposta salva.'}
+                                    {responseStatus === 'accepted' ? 'Presenca confirmada!' : 'Convite recusado.'}
                                 </p>
                                 <p className="mt-1 text-sm leading-6 text-[#CBD5E1]">
                                     {responseStatus === 'accepted'
                                         ? 'Leve este QR Code no dia do evento para acelerar seu check-in.'
-                                        : 'Seu convite continua disponível caso queira revisar os detalhes.'}
+                                        : 'Voce pode alterar sua resposta solicitando um novo codigo.'}
                                 </p>
                             </div>
                         </div>
@@ -681,12 +764,43 @@ function RsvpCard({
                 ) : null}
             </AnimatePresence>
 
-            {isError ? (
+            {errorMessage ? (
                 <p className="mt-4 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
                     {errorMessage}
                 </p>
             ) : null}
         </motion.form>
+    );
+}
+
+function SuccessToast({ responseStatus, notice }: { responseStatus: RsvpStatus | null; notice: string }) {
+    return (
+        <AnimatePresence>
+            {responseStatus ? (
+                <motion.div
+                    initial={{ opacity: 0, y: -16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16 }}
+                    className="fixed left-1/2 top-4 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-[#263247] bg-[#0B0F1A]/95 p-4 shadow-2xl backdrop-blur"
+                >
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#22C55E]/15 text-[#22C55E]">
+                            {responseStatus === 'accepted' ? (
+                                <CheckCircle2 className="h-5 w-5" />
+                            ) : (
+                                <XCircle className="h-5 w-5 text-[#F59E0B]" />
+                            )}
+                        </div>
+                        <div>
+                            <p className="font-bold">
+                                {responseStatus === 'accepted' ? 'Presenca confirmada' : 'Resposta registrada'}
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-[#CBD5E1]">{notice}</p>
+                        </div>
+                    </div>
+                </motion.div>
+            ) : null}
+        </AnimatePresence>
     );
 }
 
@@ -720,12 +834,18 @@ function InviteInput({
     value,
     onChange,
     type = 'text',
+    disabled = false,
+    inputMode,
+    maxLength,
 }: {
     icon: LucideIcon;
     label: string;
     value: string;
     onChange: (value: string) => void;
     type?: 'text' | 'email';
+    disabled?: boolean;
+    inputMode?: 'numeric';
+    maxLength?: number;
 }) {
     return (
         <label className="block">
@@ -737,10 +857,13 @@ function InviteInput({
                 <input
                     type={type}
                     value={value}
+                    disabled={disabled}
+                    inputMode={inputMode}
+                    maxLength={maxLength}
                     onChange={(event) => {
                         onChange(event.target.value);
                     }}
-                    className="h-12 w-full bg-transparent px-4 text-sm text-white outline-none placeholder:text-[#64748B]"
+                    className="h-12 w-full bg-transparent px-4 text-sm text-white outline-none placeholder:text-[#64748B] disabled:opacity-70"
                 />
             </span>
         </label>
@@ -771,7 +894,7 @@ function InviteTextarea({
                         onChange(event.target.value);
                     }}
                     className="min-h-24 w-full resize-none bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-[#64748B]"
-                    placeholder="Alguma observação para a organização?"
+                    placeholder="Alguma observacao para a organizacao?"
                 />
             </span>
         </label>

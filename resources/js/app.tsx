@@ -33,6 +33,7 @@ createRoot(rootElement).render(
                     <Route path="/login" element={<AuthPage />} />
                     <Route path="/register" element={<AuthPage />} />
                     <Route path="/events/:slug" element={<PublicEventPage />} />
+                    <Route path="/e/:slug" element={<PublicEventPage />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
                 </Routes>
             </BrowserRouter>

@@ -17,6 +17,7 @@ import type { LucideIcon } from 'lucide-react';
 import { SyntheticEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthSession, UserRole, storeSession } from '../../auth/session';
+import { siteUrl } from '../../../lib/site';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
 
 type AuthMode = 'login' | 'register';
@@ -92,7 +93,7 @@ export function AuthPage() {
                     email: form.email,
                     password: form.password,
                     options: {
-                        emailRedirectTo: `${window.location.origin}/login`,
+                        emailRedirectTo: siteUrl('/login'),
                         data: {
                             name: form.name.trim(),
                             role,
@@ -152,6 +153,33 @@ export function AuthPage() {
 
             storeSession(result.session);
             void navigate(result.session.user.role === 'guest' ? '/events/invitely-launch-night' : '/admin');
+        },
+    });
+
+    const resendConfirmation = useMutation({
+        mutationFn: async () => {
+            if (!form.email.includes('@')) {
+                throw new Error('Informe o e-mail cadastrado para reenviar a confirmação.');
+            }
+
+            const supabase = getSupabaseClient();
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: form.email,
+                options: {
+                    emailRedirectTo: siteUrl('/login'),
+                },
+            });
+
+            if (error) {
+                throw new Error(error.message);
+            }
+
+            return 'Se existir uma conta pendente para este e-mail, enviaremos um novo link de confirmação.';
+        },
+        onSuccess: (message) => {
+            setStatusMessage(message);
+            setConfirmationError(null);
         },
     });
 
@@ -326,6 +354,21 @@ export function AuthPage() {
                                     setForm({ ...form, password: value });
                                 }}
                             />
+                            {mode === 'login' ? (
+                                <div className="flex flex-col gap-2 rounded-2xl border border-[#263247] bg-[#0B0F1A] p-3 text-xs text-[#94A3B8] sm:flex-row sm:items-center sm:justify-between">
+                                    <span>Não recebeu ou perdeu o e-mail de confirmação?</span>
+                                    <button
+                                        type="button"
+                                        disabled={resendConfirmation.isPending || !isSupabaseConfigured()}
+                                        onClick={() => {
+                                            resendConfirmation.mutate();
+                                        }}
+                                        className="inline-flex h-9 items-center justify-center rounded-xl border border-[#263247] px-3 font-bold text-[#22D3EE] transition hover:border-[#22D3EE]/70 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {resendConfirmation.isPending ? 'Enviando...' : 'Reenviar confirmação'}
+                                    </button>
+                                </div>
+                            ) : null}
                             {mode === 'register' ? (
                                 <>
                                     <PasswordStrengthMeter strength={passwordStrength} />
@@ -367,6 +410,11 @@ export function AuthPage() {
                             {auth.isError ? (
                                 <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
                                     {auth.error.message}
+                                </p>
+                            ) : null}
+                            {resendConfirmation.isError ? (
+                                <p className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-sm text-red-100">
+                                    {resendConfirmation.error.message}
                                 </p>
                             ) : null}
                         </form>
