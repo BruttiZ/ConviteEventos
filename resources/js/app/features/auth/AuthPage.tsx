@@ -156,7 +156,7 @@ async function requestLaravelAuth(mode: AuthMode, payload: Record<string, string
     };
 }
 
-async function requestPendingRegistration(payload: Record<string, string>): Promise<string> {
+async function requestRegistration(payload: Record<string, string>): Promise<AuthMutationResult> {
     const response = await fetch(apiUrl('/api/v1/auth/register'), {
         method: 'POST',
         headers: {
@@ -174,7 +174,25 @@ async function requestPendingRegistration(payload: Record<string, string>): Prom
         throw new Error(validationMessage || data.message || data.error || 'Nao foi possivel criar sua conta.');
     }
 
-    return data.message || 'Codigo de confirmacao enviado para o e-mail cadastrado.';
+    if (data.data && 'token' in data.data) {
+        const session = data.data as AuthSession;
+
+        return {
+            kind: 'authenticated',
+            session: {
+                ...session,
+                user: {
+                    ...session.user,
+                    role: normalizeRole(session.user.role),
+                },
+            },
+        };
+    }
+
+    return {
+        kind: 'pending_confirmation',
+        message: data.message || 'Codigo de confirmacao enviado para o e-mail cadastrado.',
+    };
 }
 
 async function verifyLaravelEmailCode(email: string, code: string): Promise<AuthSession> {
@@ -273,18 +291,13 @@ export function AuthPage() {
                     throw new Error('Preencha o cadastro e confirme a senha corretamente.');
                 }
 
-                const message = await requestPendingRegistration({
+                return requestRegistration({
                     name: form.name.trim(),
                     email: form.email.trim(),
                     password: form.password,
                     role,
                     device_name: 'Invitely Web',
                 });
-
-                return {
-                    kind: 'pending_confirmation',
-                    message,
-                };
             }
 
             const session = await requestLaravelAuth('login', {

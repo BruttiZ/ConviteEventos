@@ -9,8 +9,8 @@ use App\Mail\UserEmailVerificationCodeMail;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserEmailVerificationCode;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -19,8 +19,10 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-final class AuthController extends Controller {
-    public function register(RegisterRequest $request): JsonResponse {
+final class AuthController extends Controller
+{
+    public function register(RegisterRequest $request): JsonResponse
+    {
         $tenant = Tenant::query()->firstOrCreate(
             ['slug' => 'demo'],
             [
@@ -36,7 +38,14 @@ final class AuthController extends Controller {
             'email' => $request->validated('email'),
             'password' => Hash::make((string) $request->validated('password')),
             'role' => $request->validated('role'),
+            'email_verified_at' => config('invitely.require_email_verification') ? null : now(),
         ]);
+
+        if (! config('invitely.require_email_verification')) {
+            return response()->json([
+                'data' => $this->issueToken($user, (string) ($request->validated('device_name') ?: 'web')),
+            ], 201);
+        }
 
         $this->sendVerificationCode($user, $request);
 
@@ -49,7 +58,8 @@ final class AuthController extends Controller {
         ], 201);
     }
 
-    public function login(LoginRequest $request): JsonResponse {
+    public function login(LoginRequest $request): JsonResponse
+    {
         $user = User::query()->where('email', $request->string('email'))->first();
 
         if (! $user || ! Hash::check((string) $request->validated('password'), $user->password)) {
@@ -58,7 +68,7 @@ final class AuthController extends Controller {
             ]);
         }
 
-        if ($user->email_verified_at === null) {
+        if (config('invitely.require_email_verification') && $user->email_verified_at === null) {
             $this->sendVerificationCode($user, $request);
 
             throw ValidationException::withMessages([
@@ -71,7 +81,35 @@ final class AuthController extends Controller {
         ]);
     }
 
-    public function verifyEmailCode(Request $request): JsonResponse {
+    public function resendEmailCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255', Rule::exists('users', 'email')],
+        ]);
+
+        $email = Str::lower(trim((string) $validated['email']));
+        /** @var User $user */
+        $user = User::query()->where('email', $email)->firstOrFail();
+
+        if ($user->email_verified_at !== null) {
+            return response()->json([
+                'message' => 'Este e-mail ja esta confirmado. Faca login para continuar.',
+            ]);
+        }
+
+        $this->sendVerificationCode($user, $request);
+
+        return response()->json([
+            'data' => [
+                'email' => $user->email,
+                'expires_in_minutes' => 10,
+            ],
+            'message' => 'Novo codigo enviado para o e-mail cadastrado.',
+        ]);
+    }
+
+    public function verifyEmailCode(Request $request): JsonResponse
+    {
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255', Rule::exists('users', 'email')],
             'code' => ['required', 'string', 'digits:6'],
@@ -135,11 +173,13 @@ final class AuthController extends Controller {
         ]);
     }
 
-    public function me(Request $request): JsonResponse {
+    public function me(Request $request): JsonResponse
+    {
         return response()->json(['data' => $request->user()]);
     }
 
-    public function logout(Request $request): JsonResponse {
+    public function logout(Request $request): JsonResponse
+    {
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Sessao encerrada.']);
@@ -148,7 +188,8 @@ final class AuthController extends Controller {
     /**
      * @return array<string, mixed>
      */
-    private function issueToken(User $user, string $deviceName): array {
+    private function issueToken(User $user, string $deviceName): array
+    {
         $abilities = match ($user->role) {
             'platform_admin' => ['platform:admin'],
             'guest' => ['event:guest'],
@@ -174,7 +215,8 @@ final class AuthController extends Controller {
         ];
     }
 
-    private function sendVerificationCode(User $user, Request $request): void {
+    private function sendVerificationCode(User $user, Request $request): void
+    {
         $email = Str::lower(trim($user->email));
         $code = (string) random_int(100000, 999999);
 
