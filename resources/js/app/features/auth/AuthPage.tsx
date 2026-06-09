@@ -287,25 +287,23 @@ export function AuthPage() {
 
     function chooseDemo(account: (typeof roleOptions)[number]) {
         setMode('login');
-        setRole(account.role);
-        setStatusMessage(null);
-        setForm((current) => ({
-            ...current,
-            name: account.defaultName,
-            email: account.email,
-            password: 'password',
-            passwordConfirmation: 'password',
-        }));
+        selectRole(account);
     }
 
     function chooseRegister(account: (typeof roleOptions)[number]) {
         setMode('register');
+        selectRole(account, true);
+    }
+
+    function selectRole(account: (typeof roleOptions)[number], useUniqueEmail = false) {
         setRole(account.role);
         setStatusMessage(null);
         setForm((current) => ({
             ...current,
             name: account.defaultName,
-            email: account.email.replace('@invitely.dev', `+novo-${Date.now().toString().slice(-4)}@invitely.dev`),
+            email: useUniqueEmail
+                ? account.email.replace('@invitely.dev', `+novo-${Date.now().toString().slice(-4)}@invitely.dev`)
+                : account.email,
             password: 'password',
             passwordConfirmation: 'password',
         }));
@@ -409,15 +407,27 @@ export function AuthPage() {
                                 return (
                                     <motion.article
                                         key={account.role}
+                                        role="button"
+                                        tabIndex={0}
                                         initial={false}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.05 }}
                                         whileHover={{ y: -6 }}
+                                        onClick={() => {
+                                            selectRole(account);
+                                        }}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter' || event.key === ' ') {
+                                                event.preventDefault();
+                                                selectRole(account);
+                                            }
+                                        }}
                                         className={
                                             isSelected
-                                                ? 'rounded-2xl border border-[#22D3EE]/70 bg-[#0EA5E9]/15 p-5 shadow-[0_0_0_1px_rgba(34,211,238,0.22),0_24px_70px_rgba(14,165,233,0.18)]'
-                                                : 'rounded-2xl border border-[#263247] bg-[#121827]/80 p-5 shadow-xl backdrop-blur'
+                                                ? 'rounded-2xl border border-[#22D3EE]/70 bg-[#0EA5E9]/15 p-5 text-left shadow-[0_0_0_1px_rgba(34,211,238,0.22),0_24px_70px_rgba(14,165,233,0.18)] outline-none ring-2 ring-[#22D3EE]/20'
+                                                : 'rounded-2xl border border-[#263247] bg-[#121827]/80 p-5 text-left shadow-xl outline-none backdrop-blur transition hover:border-[#22D3EE]/50 focus-visible:ring-2 focus-visible:ring-[#22D3EE]/50'
                                         }
+                                        aria-pressed={isSelected}
                                     >
                                         <div
                                             className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${account.gradient} text-white shadow-lg`}
@@ -431,7 +441,8 @@ export function AuthPage() {
                                         <div className="mt-5 grid grid-cols-2 gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => {
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
                                                     chooseDemo(account);
                                                 }}
                                                 className={
@@ -444,7 +455,8 @@ export function AuthPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => {
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
                                                     chooseRegister(account);
                                                 }}
                                                 className={
