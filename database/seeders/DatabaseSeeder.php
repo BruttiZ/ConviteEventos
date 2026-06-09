@@ -29,18 +29,37 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
+        $demoUsers = config('invitely.demo_users');
+        $demoPassword = (string) $demoUsers['password'];
+
         collect([
-            ['email' => 'host@invitely.dev', 'name' => 'Marina Host', 'role' => 'owner', 'tenant_id' => $tenant->id],
-            ['email' => 'guest@invitely.dev', 'name' => 'Lucas Convidado', 'role' => 'guest', 'tenant_id' => $tenant->id],
-            ['email' => 'admin@invitely.dev', 'name' => 'Invitely Admin', 'role' => 'platform_admin', 'tenant_id' => null],
-        ])->each(function (array $user): void {
+            [
+                'email' => $demoUsers['owner']['email'],
+                'name' => $demoUsers['owner']['name'],
+                'role' => 'owner',
+                'tenant_id' => $tenant->id,
+            ],
+            [
+                'email' => $demoUsers['guest']['email'],
+                'name' => $demoUsers['guest']['name'],
+                'role' => 'guest',
+                'tenant_id' => $tenant->id,
+            ],
+            [
+                'email' => $demoUsers['platform_admin']['email'],
+                'name' => $demoUsers['platform_admin']['name'],
+                'role' => 'platform_admin',
+                'tenant_id' => null,
+            ],
+        ])->each(function (array $user) use ($demoPassword): void {
             User::query()->updateOrCreate(
                 ['email' => $user['email']],
                 [
                     'tenant_id' => $user['tenant_id'],
                     'name' => $user['name'],
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make($demoPassword),
                     'role' => $user['role'],
+                    'email_verified_at' => now(),
                 ],
             );
         });

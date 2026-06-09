@@ -60,6 +60,17 @@ type ActionItem = {
     variant?: 'primary' | 'secondary';
 };
 
+type TemplateOption = {
+    id: string;
+    name: string;
+    description: string;
+    accent: string;
+    badge: string;
+    gradient: string;
+    image: string;
+    highlights: string[];
+};
+
 const destinations: Record<UserRole, string> = {
     owner: '/organizador',
     guest: '/convidado',
@@ -126,12 +137,60 @@ const initialEventCards: CreatedEventSummary[] = [
 ];
 
 const guests = [
-    { name: 'Lucas Convidado', email: 'guest@invitely.dev', status: 'Confirmado' },
+    {
+        name: import.meta.env.VITE_DEMO_GUEST_NAME ?? 'Convidado',
+        email: import.meta.env.VITE_DEMO_GUEST_EMAIL ?? 'guest@example.com',
+        status: 'Confirmado',
+    },
     { name: 'Ana Ribeiro', email: 'ana@example.com', status: 'Pendente' },
     { name: 'Felipe Costa', email: 'felipe@example.com', status: 'Check-in feito' },
     { name: 'Bianca Torres', email: 'bianca@example.com', status: 'Pendente' },
     { name: 'Rafael Lima', email: 'rafael@example.com', status: 'Pendente' },
 ];
+
+const templateOptions: TemplateOption[] = [
+    {
+        id: 'linear-premium',
+        name: 'Linear Premium',
+        description: 'Convite executivo com foco em agenda, RSVP rapido e visual SaaS premium.',
+        accent: '#22D3EE',
+        badge: 'Corporativo',
+        gradient: 'linear-gradient(135deg, #111827 0%, #312E81 45%, #22D3EE 100%)',
+        image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
+        highlights: ['Agenda em destaque', 'Check-in minimalista', 'Resumo executivo'],
+    },
+    {
+        id: 'gala-aurora',
+        name: 'Gala Aurora',
+        description: 'Layout sofisticado para formaturas, casamentos e jantares com fotografia imersiva.',
+        accent: '#A78BFA',
+        badge: 'Elegante',
+        gradient: 'linear-gradient(135deg, #1E1B4B 0%, #7C3AED 50%, #F0ABFC 100%)',
+        image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=900&q=80',
+        highlights: ['Hero fotografico', 'Galeria premium', 'Dress code visual'],
+    },
+    {
+        id: 'garden-night',
+        name: 'Jardim Noturno',
+        description: 'Template acolhedor para aniversarios e encontros ao ar livre, com detalhes vivos.',
+        accent: '#34D399',
+        badge: 'Social',
+        gradient: 'linear-gradient(135deg, #052E2B 0%, #047857 48%, #F59E0B 100%)',
+        image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=900&q=80',
+        highlights: ['Mapa afetivo', 'Recados dos convidados', 'Contagem regressiva'],
+    },
+    {
+        id: 'neon-festival',
+        name: 'Neon Festival',
+        description: 'Experiencia vibrante para festas, baladas e lancamentos com presenca forte.',
+        accent: '#38BDF8',
+        badge: 'Energetico',
+        gradient: 'linear-gradient(135deg, #020617 0%, #DB2777 45%, #06B6D4 100%)',
+        image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80',
+        highlights: ['Pulseira QR Code', 'Line-up visual', 'CTA de confirmacao'],
+    },
+];
+const defaultTemplate = templateOptions[0] as TemplateOption;
 
 const tenants = [
     { name: 'Invitely Demo', plan: 'community', events: '12', status: 'Saudavel' },
@@ -220,6 +279,7 @@ export function AdminDashboard() {
     const [isCreatingEvent, setIsCreatingEvent] = useState(false);
     const [isSendingReminder, setIsSendingReminder] = useState(false);
     const [events, setEvents] = useState<CreatedEventSummary[]>(initialEventCards);
+    const [activeTemplate, setActiveTemplate] = useState<TemplateOption>(defaultTemplate);
     const [toast, setToast] = useState('Dashboard carregado. Explore os modulos do produto.');
 
     const expectedRole = expectedRoleForPath(location.pathname);
@@ -384,7 +444,14 @@ export function AdminDashboard() {
                             }}
                         />
                     ) : (
-                        <DashboardContent role={user.role} view={view} notify={notify} events={events} />
+                        <DashboardContent
+                            role={user.role}
+                            view={view}
+                            notify={notify}
+                            events={events}
+                            activeTemplate={activeTemplate}
+                            onApplyTemplate={setActiveTemplate}
+                        />
                     )}
                 </section>
             </div>
@@ -397,11 +464,15 @@ function DashboardContent({
     view,
     notify,
     events,
+    activeTemplate,
+    onApplyTemplate,
 }: {
     role: UserRole;
     view: DashboardView;
     notify: (message: string) => void;
     events: CreatedEventSummary[];
+    activeTemplate: TemplateOption;
+    onApplyTemplate: (template: TemplateOption) => void;
 }) {
     if (view === 'overview') {
         return <Overview role={role} notify={notify} />;
@@ -416,7 +487,7 @@ function DashboardContent({
     }
 
     if (view === 'templates') {
-        return <TemplatesView notify={notify} />;
+        return <TemplatesView activeTemplate={activeTemplate} notify={notify} onApplyTemplate={onApplyTemplate} />;
     }
 
     if (view === 'checkin') {
@@ -578,12 +649,19 @@ function ReminderPanel({
 }) {
     const pendingGuests = guests.filter((guest) => guest.status === 'Pendente');
     const [selectedEmails, setSelectedEmails] = useState<string[]>(pendingGuests.map((guest) => guest.email));
+    const [customRecipients, setCustomRecipients] = useState<Array<{ name: string; email: string; status: string }>>(
+        [],
+    );
     const [customEmail, setCustomEmail] = useState('');
     const [subject, setSubject] = useState('Lembrete: confirme sua presenca no evento');
     const [message, setMessage] = useState(
         'Oi! Passando para lembrar voce de confirmar presenca. Assim conseguimos organizar tudo com carinho.',
     );
     const [isSending, setIsSending] = useState(false);
+    const reminderGuests = [...guests, ...customRecipients];
+    const pendingRecipientEmails = reminderGuests
+        .filter((guest) => guest.status === 'Pendente' || guest.status === 'Manual')
+        .map((guest) => guest.email);
 
     function toggleEmail(email: string) {
         setSelectedEmails((current) =>
@@ -594,10 +672,26 @@ function ReminderPanel({
     function addCustomEmail() {
         const normalizedEmail = customEmail.trim().toLowerCase();
 
-        if (!normalizedEmail.includes('@') || selectedEmails.includes(normalizedEmail)) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
             return;
         }
 
+        if (reminderGuests.some((guest) => guest.email === normalizedEmail)) {
+            setSelectedEmails((current) => (current.includes(normalizedEmail) ? current : [...current, normalizedEmail]));
+            setCustomEmail('');
+            return;
+        }
+
+        const [emailName = 'Convidado manual'] = normalizedEmail.split('@');
+
+        setCustomRecipients((current) => [
+            ...current,
+            {
+                name: emailName.replace(/[._-]/g, ' '),
+                email: normalizedEmail,
+                status: 'Manual',
+            },
+        ]);
         setSelectedEmails((current) => [...current, normalizedEmail]);
         setCustomEmail('');
     }
@@ -641,7 +735,7 @@ function ReminderPanel({
                             <ActionButton
                                 variant="secondary"
                                 onClick={() => {
-                                    setSelectedEmails(guests.map((guest) => guest.email));
+                                    setSelectedEmails(reminderGuests.map((guest) => guest.email));
                                 }}
                             >
                                 Selecionar todos
@@ -649,7 +743,7 @@ function ReminderPanel({
                             <ActionButton
                                 variant="secondary"
                                 onClick={() => {
-                                    setSelectedEmails(pendingGuests.map((guest) => guest.email));
+                                    setSelectedEmails(pendingRecipientEmails);
                                 }}
                             >
                                 Apenas pendentes
@@ -657,7 +751,7 @@ function ReminderPanel({
                         </div>
 
                         <div className="grid gap-3">
-                            {guests.map((guest) => {
+                            {reminderGuests.map((guest) => {
                                 const isSelected = selectedEmails.includes(guest.email);
 
                                 return (
@@ -689,11 +783,22 @@ function ReminderPanel({
                                 onChange={(event) => {
                                     setCustomEmail(event.target.value);
                                 }}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        addCustomEmail();
+                                    }
+                                }}
                                 placeholder="adicionar@email.com"
                                 className="h-11 min-w-0 flex-1 rounded-xl border border-[#263247] bg-[#060B1A] px-4 text-sm text-white outline-none transition focus:border-[#22D3EE]"
                             />
                             <ActionButton onClick={addCustomEmail}>Adicionar</ActionButton>
                         </div>
+                        {customRecipients.length > 0 ? (
+                            <p className="mt-3 text-xs text-[#94A3B8]">
+                                {String(customRecipients.length)} e-mail(s) manual(is) adicionado(s) a campanha.
+                            </p>
+                        ) : null}
                     </Panel>
 
                     <Panel title="Mensagem">
@@ -755,29 +860,89 @@ function ReminderPanel({
     );
 }
 
-function TemplatesView({ notify }: { notify: (message: string) => void }) {
+function TemplatesView({
+    activeTemplate,
+    notify,
+    onApplyTemplate,
+}: {
+    activeTemplate: TemplateOption;
+    notify: (message: string) => void;
+    onApplyTemplate: (template: TemplateOption) => void;
+}) {
     return (
-        <section className="mt-6 grid gap-5 md:grid-cols-3">
-            {['Linear Premium', 'Apple Events', 'Raycast Night'].map((template) => (
-                <motion.article
-                    key={template}
-                    whileHover={{ y: -5 }}
-                    className="rounded-3xl border border-[#263247] bg-[#121827] p-5"
-                >
-                    <div className="h-32 rounded-2xl bg-gradient-to-br from-[#8B5CF6] via-[#0EA5E9] to-[#22D3EE]" />
-                    <h2 className="mt-4 text-lg font-bold">{template}</h2>
-                    <p className="mt-2 text-sm leading-6 text-[#94A3B8]">Visual premium para eventos memoraveis.</p>
-                    <ActionButton
-                        className="mt-4 w-full"
-                        onClick={() => {
-                            notify(`${template} aplicado ao evento.`);
-                        }}
-                    >
-                        <Wand2 className="h-4 w-4" />
-                        Aplicar template
-                    </ActionButton>
-                </motion.article>
-            ))}
+        <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                {templateOptions.map((template) => {
+                    const isActive = activeTemplate.id === template.id;
+
+                    return (
+                        <motion.article
+                            key={template.id}
+                            whileHover={{ y: -5 }}
+                            className={
+                                isActive
+                                    ? 'rounded-3xl border border-[#22D3EE]/70 bg-[#121827] p-5 shadow-[0_24px_80px_rgba(34,211,238,0.12)]'
+                                    : 'rounded-3xl border border-[#263247] bg-[#121827] p-5 transition hover:border-[#22D3EE]/40'
+                            }
+                        >
+                            <div className="relative h-36 overflow-hidden rounded-2xl" style={{ background: template.gradient }}>
+                                <img src={template.image} alt="" className="h-full w-full object-cover opacity-45 mix-blend-screen" />
+                                <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-bold text-white backdrop-blur">
+                                    {template.badge}
+                                </span>
+                            </div>
+                            <div className="mt-4 flex items-start justify-between gap-4">
+                                <div>
+                                    <h2 className="text-lg font-bold">{template.name}</h2>
+                                    <p className="mt-2 text-sm leading-6 text-[#94A3B8]">{template.description}</p>
+                                </div>
+                                {isActive ? <StatusChip status="Ativo" /> : null}
+                            </div>
+                            <div className="mt-4 grid gap-2">
+                                {template.highlights.map((highlight) => (
+                                    <span key={highlight} className="flex items-center gap-2 text-sm text-[#CBD5E1]">
+                                        <CheckCircle2 className="h-4 w-4" style={{ color: template.accent }} />
+                                        {highlight}
+                                    </span>
+                                ))}
+                            </div>
+                            <ActionButton
+                                className="mt-5 w-full"
+                                variant={isActive ? 'secondary' : 'primary'}
+                                onClick={() => {
+                                    onApplyTemplate(template);
+                                    notify(`${template.name} aplicado ao preview do evento.`);
+                                }}
+                            >
+                                <Wand2 className="h-4 w-4" />
+                                {isActive ? 'Template aplicado' : 'Aplicar template'}
+                            </ActionButton>
+                        </motion.article>
+                    );
+                })}
+            </div>
+
+            <aside className="rounded-3xl border border-[#263247] bg-[#0B0F1A]/90 p-5 shadow-2xl">
+                <p className="text-sm font-semibold text-[#94A3B8]">Preview do template</p>
+                <div className="mt-4 overflow-hidden rounded-2xl border border-[#263247] bg-[#121827]">
+                    <div className="relative h-44" style={{ background: activeTemplate.gradient }}>
+                        <img src={activeTemplate.image} alt="" className="h-full w-full object-cover opacity-50 mix-blend-screen" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#060B1A] to-transparent p-4">
+                            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white">
+                                {activeTemplate.badge}
+                            </span>
+                            <h3 className="mt-3 text-2xl font-extrabold">{activeTemplate.name}</h3>
+                        </div>
+                    </div>
+                    <div className="grid gap-3 p-4">
+                        {activeTemplate.highlights.map((highlight) => (
+                            <div key={highlight} className="rounded-xl border border-[#263247] bg-[#0B0F1A] p-3 text-sm text-[#CBD5E1]">
+                                {highlight}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </aside>
         </section>
     );
 }

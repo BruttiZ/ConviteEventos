@@ -121,27 +121,30 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
             };
 
             if (!session?.token || session.token.startsWith('demo-') || session.token.startsWith('super-user-token-')) {
-                await waitForDemo();
-
-                return { id: `demo-${Date.now().toString()}`, event: createdEvent, source: 'demo' };
+                throw new Error('Entre com uma conta real para criar eventos no banco.');
             }
 
-            const response = await fetch(apiUrl('/api/v1/admin/events'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session.token}`,
-                },
-                body: JSON.stringify(payload),
-            });
+            let response: Response;
+
+            try {
+                response = await fetch(apiUrl('/api/v1/admin/events'), {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.token}`,
+                    },
+                    body: JSON.stringify(payload),
+                });
+            } catch {
+                throw new Error('Nao foi possivel conectar na API Laravel. Verifique se o backend esta publicado e acessivel.');
+            }
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
 
-                if (response.status === 401 || response.status === 403) {
-                    await waitForDemo();
-
-                    return { id: `demo-${Date.now().toString()}`, event: createdEvent, source: 'demo' };
+                if (response.status === 404) {
+                    throw new Error('API de eventos nao encontrada neste deploy. Publique o Laravel ou configure VITE_API_URL.');
                 }
 
                 const validationMessages =

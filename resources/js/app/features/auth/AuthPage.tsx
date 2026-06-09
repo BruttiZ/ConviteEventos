@@ -22,10 +22,10 @@ import type { LucideIcon } from 'lucide-react';
 import { SyntheticEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthSession, UserRole, roleLabel, storeSession } from '../../auth/session';
-import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
-import { retryWithExponentialBackoff } from '../../../lib/retry';
+import { apiUrl } from '../../../lib/api';
 
 type AuthMode = 'login' | 'register';
+type AuthStep = 'credentials' | 'verify_code';
 
 type AuthMutationResult =
     | {
@@ -36,6 +36,23 @@ type AuthMutationResult =
           kind: 'pending_confirmation';
           message: string;
       };
+
+type LaravelAuthResponse = {
+    data?: AuthSession;
+    message?: string;
+    error?: string;
+    errors?: Record<string, string[]>;
+};
+
+type LaravelPendingAuthResponse = {
+    data?: {
+        email?: string;
+        expires_in_minutes?: number;
+    };
+    message?: string;
+    error?: string;
+    errors?: Record<string, string[]>;
+};
 
 const roleOptions: {
     role: UserRole;
@@ -54,8 +71,8 @@ const roleOptions: {
         shortTitle: 'Admin',
         description: 'Cuida do software, tenants, saude operacional, suporte e governanca.',
         registerHint: 'Perfil interno para operar a plataforma e monitorar clientes.',
-        email: 'admin@invitely.dev',
-        defaultName: 'Invitely Admin',
+        email: import.meta.env.VITE_DEMO_ADMIN_EMAIL ?? '',
+        defaultName: import.meta.env.VITE_DEMO_ADMIN_NAME ?? 'Admin Invitely',
         gradient: 'from-[#A78BFA] to-[#0EA5E9]',
         icon: ShieldCheck,
     },
@@ -65,8 +82,8 @@ const roleOptions: {
         shortTitle: 'Organizador',
         description: 'Cria eventos, gerencia convidados, escolhe temas e acompanha RSVP.',
         registerHint: 'Ideal para cerimonialistas, anfitrioes e empresas que vendem eventos.',
-        email: 'host@invitely.dev',
-        defaultName: 'Marina Host',
+        email: import.meta.env.VITE_DEMO_OWNER_EMAIL ?? '',
+        defaultName: import.meta.env.VITE_DEMO_OWNER_NAME ?? 'Organizador',
         gradient: 'from-[#8B5CF6] to-[#22D3EE]',
         icon: CalendarDays,
     },
@@ -76,8 +93,8 @@ const roleOptions: {
         shortTitle: 'Convidado',
         description: 'Ve o convite, confirma presenca, salva QR Code e acompanha detalhes.',
         registerHint: 'Perfeito para simular a experiencia de quem recebeu o convite.',
-        email: 'guest@invitely.dev',
-        defaultName: 'Lucas Convidado',
+        email: import.meta.env.VITE_DEMO_GUEST_EMAIL ?? '',
+        defaultName: import.meta.env.VITE_DEMO_GUEST_NAME ?? 'Convidado',
         gradient: 'from-[#22C55E] to-[#22D3EE]',
         icon: TicketCheck,
     },
@@ -98,22 +115,97 @@ function destinationFor(role: UserRole): string {
     }[role];
 }
 
-function demoSessionFor(role: UserRole, name: string, email: string): AuthSession {
+function normalizeRole(role: unknown): UserRole {
+    return role === 'guest' || role === 'platform_admin' || role === 'owner' ? role : 'owner';
+}
+
+function uniqueEmail(email: string): string {
+    const [localPart, domain] = email.split('@');
+
+    if (!localPart || !domain) {
+        return email;
+    }
+
+    return `${localPart}+novo-${Date.now().toString().slice(-4)}@${domain}`;
+}
+
+async function requestLaravelAuth(mode: AuthMode, payload: Record<string, string>): Promise<AuthSession> {
+    const response = await fetch(apiUrl(mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register'), {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+    const data = (await response.json().catch(() => ({}))) as LaravelAuthResponse;
+
+    if (!response.ok || !data.data) {
+        const validationMessage =
+            data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null;
+
+        throw new Error(validationMessage || data.message || data.error || 'Nao foi possivel autenticar na API.');
+    }
+
     return {
-        token: `demo-${role}-${Date.now().toString()}`,
-        token_type: 'Bearer',
+        ...data.data,
         user: {
-            id: `demo-${role}`,
-            name,
-            email,
-            role,
-            tenant_id: role === 'platform_admin' ? null : 'demo',
+            ...data.data.user,
+            role: normalizeRole(data.data.user.role),
         },
     };
 }
 
-function normalizeRole(role: unknown): UserRole {
-    return role === 'guest' || role === 'platform_admin' || role === 'owner' ? role : 'owner';
+async function requestPendingRegistration(payload: Record<string, string>): Promise<string> {
+    const response = await fetch(apiUrl('/api/v1/auth/register'), {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+    const data = (await response.json().catch(() => ({}))) as LaravelPendingAuthResponse;
+
+    if (!response.ok) {
+        const validationMessage =
+            data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null;
+
+        throw new Error(validationMessage || data.message || data.error || 'Nao foi possivel criar sua conta.');
+    }
+
+    return data.message || 'Codigo de confirmacao enviado para o e-mail cadastrado.';
+}
+
+async function verifyLaravelEmailCode(email: string, code: string): Promise<AuthSession> {
+    const response = await fetch(apiUrl('/api/v1/auth/verify-email-code'), {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email,
+            code,
+            device_name: 'Invitely Web',
+        }),
+    });
+    const data = (await response.json().catch(() => ({}))) as LaravelAuthResponse;
+
+    if (!response.ok || !data.data) {
+        const validationMessage =
+            data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null;
+
+        throw new Error(validationMessage || data.message || data.error || 'Nao foi possivel validar o codigo.');
+    }
+
+    return {
+        ...data.data,
+        user: {
+            ...data.data.user,
+            role: normalizeRole(data.data.user.role),
+        },
+    };
 }
 
 function formatErrorMessage(error: Error): string {
@@ -123,7 +215,7 @@ function formatErrorMessage(error: Error): string {
         return 'Muitas tentativas. Aguarde alguns momentos e tente novamente.';
     }
 
-    if (message.includes('user already exists')) {
+    if (message.includes('user already exists') || message.includes('already been taken') || message.includes('ja esta')) {
         return 'Este e-mail ja esta cadastrado. Faca login em vez disso.';
     }
 
@@ -141,13 +233,16 @@ function formatErrorMessage(error: Error): string {
 export function AuthPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<AuthMode>('login');
+    const [step, setStep] = useState<AuthStep>('credentials');
     const [role, setRole] = useState<UserRole>('owner');
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [verificationCode, setVerificationCode] = useState('');
+    const [pendingEmail, setPendingEmail] = useState('');
     const [form, setForm] = useState({
-        name: 'Marina Host',
-        email: 'host@invitely.dev',
-        password: 'password',
-        passwordConfirmation: 'password',
+        name: import.meta.env.VITE_DEMO_OWNER_NAME ?? 'Organizador',
+        email: import.meta.env.VITE_DEMO_OWNER_EMAIL ?? '',
+        password: '',
+        passwordConfirmation: '',
         partyName: 'Invitely Launch Night',
     });
 
@@ -156,125 +251,55 @@ export function AuthPage() {
     const passwordsMatch = form.password.length > 0 && form.password === form.passwordConfirmation;
     const isRegisterValid =
         form.name.trim().length >= 2 && form.email.includes('@') && form.password.length >= 6 && passwordsMatch;
-    const canSubmit = mode === 'login' ? form.email.includes('@') && form.password.length >= 6 : isRegisterValid;
+    const canSubmit =
+        step === 'verify_code'
+            ? verificationCode.trim().length === 6
+            : mode === 'login'
+              ? form.email.includes('@') && form.password.length >= 6
+              : isRegisterValid;
 
     const auth = useMutation({
         mutationFn: async (): Promise<AuthMutationResult> => {
             setStatusMessage(null);
 
-            const demoAccount = roleOptions.find((account) => account.email === form.email.trim());
-            const superUserEmail = import.meta.env.VITE_SUPER_USER_EMAIL;
-            const superUserPassword = import.meta.env.VITE_SUPER_USER_PASSWORD;
-            const isSuperUserAttempt =
-                mode === 'login' &&
-                superUserEmail &&
-                form.email.trim() === superUserEmail.trim() &&
-                form.password === superUserPassword;
+            if (step === 'verify_code') {
+                const session = await verifyLaravelEmailCode(pendingEmail || form.email.trim(), verificationCode.trim());
 
-            if (mode === 'login' && form.password === 'password' && demoAccount) {
-                return {
-                    kind: 'authenticated',
-                    session: demoSessionFor(demoAccount.role, demoAccount.defaultName, demoAccount.email),
-                };
+                return { kind: 'authenticated', session };
             }
-
-            if (isSuperUserAttempt) {
-                return {
-                    kind: 'authenticated',
-                    session: demoSessionFor('platform_admin', 'Admin Invitely', form.email.trim()),
-                };
-            }
-
-            if (!isSupabaseConfigured()) {
-                if (mode === 'register') {
-                    return {
-                        kind: 'authenticated',
-                        session: demoSessionFor(role, form.name.trim(), form.email.trim()),
-                    };
-                }
-
-                throw new Error('Supabase nao esta configurado. Use as contas demo com senha password.');
-            }
-
-            const supabase = getSupabaseClient();
 
             if (mode === 'register') {
                 if (!isRegisterValid) {
                     throw new Error('Preencha o cadastro e confirme a senha corretamente.');
                 }
 
-                const { data, error } = await retryWithExponentialBackoff(
-                    () =>
-                        supabase.auth.signUp({
-                            email: form.email,
-                            password: form.password,
-                            options: {
-                                data: {
-                                    name: form.name.trim(),
-                                    role,
-                                    party_name: form.partyName.trim(),
-                                },
-                            },
-                        }),
-                    {
-                        maxAttempts: 3,
-                        baseDelayMs: 2000,
-                        maxDelayMs: 10000,
-                    },
-                );
+                const message = await requestPendingRegistration({
+                    name: form.name.trim(),
+                    email: form.email.trim(),
+                    password: form.password,
+                    role,
+                    device_name: 'Invitely Web',
+                });
 
-                if (error) {
-                    throw new Error(error.message);
-                }
-
-                if (data.user && !data.session) {
-                    return {
-                        kind: 'pending_confirmation',
-                        message: 'Cadastro criado. Confirme seu e-mail para entrar.',
-                    };
-                }
-
-                if (data.session && data.user) {
-                    return {
-                        kind: 'authenticated',
-                        session: demoSessionFor(role, form.name.trim(), form.email.trim()),
-                    };
-                }
-
-                throw new Error('Erro ao criar conta. Tente novamente.');
+                return {
+                    kind: 'pending_confirmation',
+                    message,
+                };
             }
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: form.email,
+            const session = await requestLaravelAuth('login', {
+                email: form.email.trim(),
                 password: form.password,
+                device_name: 'Invitely Web',
             });
 
-            if (error) {
-                throw new Error(error.message);
-            }
-
-            const metadata = data.user.user_metadata;
-            const userRole = normalizeRole(metadata.role);
-            const userName =
-                typeof metadata.name === 'string' && metadata.name.trim().length > 0 ? metadata.name : form.email;
-
-            return {
-                kind: 'authenticated',
-                session: {
-                    token: data.session.access_token,
-                    token_type: 'Bearer',
-                    user: {
-                        id: data.user.id,
-                        name: userName,
-                        email: form.email,
-                        role: userRole,
-                        tenant_id: null,
-                    },
-                },
-            };
+            return { kind: 'authenticated', session };
         },
         onSuccess: (payload) => {
             if (payload.kind === 'pending_confirmation') {
+                setPendingEmail(form.email.trim());
+                setVerificationCode('');
+                setStep('verify_code');
                 setStatusMessage(payload.message);
 
                 return;
@@ -287,25 +312,29 @@ export function AuthPage() {
 
     function chooseDemo(account: (typeof roleOptions)[number]) {
         setMode('login');
+        setStep('credentials');
         selectRole(account);
     }
 
     function chooseRegister(account: (typeof roleOptions)[number]) {
         setMode('register');
+        setStep('credentials');
         selectRole(account, true);
     }
 
     function selectRole(account: (typeof roleOptions)[number], useUniqueEmail = false) {
         setRole(account.role);
         setStatusMessage(null);
+        setVerificationCode('');
+        setPendingEmail('');
         setForm((current) => ({
             ...current,
             name: account.defaultName,
             email: useUniqueEmail
-                ? account.email.replace('@invitely.dev', `+novo-${Date.now().toString().slice(-4)}@invitely.dev`)
+                ? uniqueEmail(account.email)
                 : account.email,
-            password: 'password',
-            passwordConfirmation: 'password',
+            password: '',
+            passwordConfirmation: '',
         }));
     }
 
@@ -356,6 +385,7 @@ export function AuthPage() {
                             type="button"
                             onClick={() => {
                                 setMode('register');
+                                setStep('credentials');
                             }}
                             className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-4 text-sm font-semibold transition hover:scale-[1.03]"
                         >
@@ -491,6 +521,8 @@ export function AuthPage() {
                                             type="button"
                                             onClick={() => {
                                                 setMode(item);
+                                                setStep('credentials');
+                                                setStatusMessage(null);
                                             }}
                                             className={
                                                 mode === item
@@ -508,19 +540,43 @@ export function AuthPage() {
                                         {roleLabel(role)}
                                     </p>
                                     <h2 className="mt-2 text-2xl font-extrabold">
-                                        {mode === 'login'
+                                        {step === 'verify_code'
+                                            ? 'Confirme seu e-mail'
+                                            : mode === 'login'
                                             ? `Entrar como ${selectedAccount?.shortTitle}`
                                             : `Cadastrar ${selectedAccount?.shortTitle}`}
                                     </h2>
                                     <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
-                                        {mode === 'login'
+                                        {step === 'verify_code'
+                                            ? `Digite o codigo de 6 digitos enviado para ${pendingEmail || form.email}.`
+                                            : mode === 'login'
                                             ? 'Use uma conta demo ou suas credenciais reais.'
-                                            : 'Crie uma conta demo clicavel para explorar o produto.'}
+                                            : 'Crie uma conta real, confirme o e-mail e entre com token seguro.'}
                                     </p>
                                 </div>
 
                                 <form className="mt-6 grid gap-3" onSubmit={submit}>
-                                    {mode === 'register' && (
+                                    {step === 'verify_code' ? (
+                                        <>
+                                            <InputField
+                                                value={verificationCode}
+                                                onChange={(value) => {
+                                                    setVerificationCode(value.replace(/\D/g, '').slice(0, 6));
+                                                }}
+                                                placeholder="Codigo de 6 digitos"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setStep('credentials');
+                                                    setStatusMessage(null);
+                                                }}
+                                                className="h-11 rounded-xl border border-[#263247] bg-[#121827] px-4 text-sm font-bold text-white transition hover:border-[#22D3EE]/60"
+                                            >
+                                                Voltar para cadastro
+                                            </button>
+                                        </>
+                                    ) : mode === 'register' && (
                                         <>
                                             <InputField
                                                 value={form.name}
@@ -543,22 +599,26 @@ export function AuthPage() {
                                         </>
                                     )}
 
-                                    <InputField
-                                        type="email"
-                                        value={form.email}
-                                        onChange={(value) => {
-                                            setForm({ ...form, email: value });
-                                        }}
-                                        placeholder="email@exemplo.com"
-                                    />
-                                    <PasswordField
-                                        value={form.password}
-                                        onChange={(value) => {
-                                            setForm({ ...form, password: value });
-                                        }}
-                                    />
+                                    {step === 'credentials' && (
+                                        <>
+                                            <InputField
+                                                type="email"
+                                                value={form.email}
+                                                onChange={(value) => {
+                                                    setForm({ ...form, email: value });
+                                                }}
+                                                placeholder="email@exemplo.com"
+                                            />
+                                            <PasswordField
+                                                value={form.password}
+                                                onChange={(value) => {
+                                                    setForm({ ...form, password: value });
+                                                }}
+                                            />
+                                        </>
+                                    )}
 
-                                    {mode === 'register' && (
+                                    {step === 'credentials' && mode === 'register' && (
                                         <>
                                             <PasswordField
                                                 value={form.passwordConfirmation}
@@ -584,7 +644,11 @@ export function AuthPage() {
                                         ) : (
                                             <ArrowRight className="h-4 w-4" />
                                         )}
-                                        {mode === 'login' ? 'Entrar na area' : 'Criar e abrir area'}
+                                        {step === 'verify_code'
+                                            ? 'Validar codigo e entrar'
+                                            : mode === 'login'
+                                              ? 'Entrar na area'
+                                              : 'Criar conta e enviar codigo'}
                                     </button>
 
                                     {auth.isError && (
@@ -600,7 +664,7 @@ export function AuthPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
-                                        Senha demo: <strong className="text-white">password</strong>
+                                        Senha definida no ambiente do backend
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {role === 'owner' && <PartyPopper className="h-4 w-4 text-[#22D3EE]" />}

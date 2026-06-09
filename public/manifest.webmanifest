@@ -2,6 +2,8 @@
     "name": "Invitely",
     "short_name": "Invitely",
     "description": "Convites digitais premium com RSVP, QR Code e painel de eventos.",
+    "id": "/",
+    "scope": "/",
     "start_url": "/events/invitely-launch-night",
     "display": "standalone",
     "background_color": "#020617",
