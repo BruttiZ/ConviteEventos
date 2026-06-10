@@ -108,7 +108,7 @@ export function LandingPage() {
                                 to="/admin"
                                 className="inline-flex h-12 items-center justify-center rounded-lg border border-[#263247] bg-[#121827]/70 px-5 text-sm font-bold transition hover:scale-[1.03] hover:border-[#22D3EE]/60"
                             >
-                                Ver demonstração
+                                Acessar painel
                             </Link>
                         </div>
                         <div className="mt-9 grid gap-4 text-sm text-[#CBD5E1] sm:grid-cols-3">

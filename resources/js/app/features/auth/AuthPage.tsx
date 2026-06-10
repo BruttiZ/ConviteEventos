@@ -92,7 +92,7 @@ const roleOptions: {
         title: 'Convidado',
         shortTitle: 'Convidado',
         description: 'Ve o convite, confirma presenca, salva QR Code e acompanha detalhes.',
-        registerHint: 'Perfeito para simular a experiencia de quem recebeu o convite.',
+        registerHint: 'Ideal para convidados acompanharem convite, RSVP e QR Code em um so lugar.',
         email: import.meta.env.VITE_DEMO_GUEST_EMAIL ?? '',
         defaultName: import.meta.env.VITE_DEMO_GUEST_NAME ?? 'Convidado',
         gradient: 'from-[#22C55E] to-[#22D3EE]',
@@ -215,7 +215,11 @@ function formatErrorMessage(error: Error): string {
         return 'Muitas tentativas. Aguarde alguns momentos e tente novamente.';
     }
 
-    if (message.includes('user already exists') || message.includes('already been taken') || message.includes('ja esta')) {
+    if (
+        message.includes('user already exists') ||
+        message.includes('already been taken') ||
+        message.includes('ja esta')
+    ) {
         return 'Este e-mail ja esta cadastrado. Faca login em vez disso.';
     }
 
@@ -225,6 +229,10 @@ function formatErrorMessage(error: Error): string {
 
     if (message.includes('weak password')) {
         return 'Senha muito fraca. Use letras, numeros e caracteres especiais.';
+    }
+
+    if (message.includes('provided credentials') || message.includes('credentials are incorrect')) {
+        return 'E-mail ou senha incorretos. Confira os dados ou crie uma conta antes de entrar.';
     }
 
     return error.message;
@@ -240,7 +248,7 @@ export function AuthPage() {
     const [pendingEmail, setPendingEmail] = useState('');
     const [form, setForm] = useState({
         name: import.meta.env.VITE_DEMO_OWNER_NAME ?? 'Organizador',
-        email: import.meta.env.VITE_DEMO_OWNER_EMAIL ?? '',
+        email: '',
         password: '',
         passwordConfirmation: '',
         partyName: 'Invitely Launch Night',
@@ -263,7 +271,10 @@ export function AuthPage() {
             setStatusMessage(null);
 
             if (step === 'verify_code') {
-                const session = await verifyLaravelEmailCode(pendingEmail || form.email.trim(), verificationCode.trim());
+                const session = await verifyLaravelEmailCode(
+                    pendingEmail || form.email.trim(),
+                    verificationCode.trim(),
+                );
 
                 return { kind: 'authenticated', session };
             }
@@ -310,7 +321,7 @@ export function AuthPage() {
         },
     });
 
-    function chooseDemo(account: (typeof roleOptions)[number]) {
+    function chooseLogin(account: (typeof roleOptions)[number]) {
         setMode('login');
         setStep('credentials');
         selectRole(account);
@@ -330,9 +341,7 @@ export function AuthPage() {
         setForm((current) => ({
             ...current,
             name: account.defaultName,
-            email: useUniqueEmail
-                ? uniqueEmail(account.email)
-                : account.email,
+            email: useUniqueEmail ? uniqueEmail(account.email) : account.email,
             password: '',
             passwordConfirmation: '',
         }));
@@ -399,26 +408,26 @@ export function AuthPage() {
                         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
                             <span className="inline-flex items-center gap-2 rounded-full border border-[#263247] bg-[#121827]/80 px-3 py-1 text-xs text-[#CBD5E1]">
                                 <Sparkles className="h-3.5 w-3.5 text-[#8B5CF6]" />
-                                Login multi-perfil
+                                Acesso seguro
                             </span>
                             <h1 className="mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-normal sm:text-5xl lg:text-6xl">
-                                Entre como <span className="text-[#A78BFA]">admin</span>, organizador ou convidado.
+                                Acesse sua conta e gerencie seus eventos com seguranca.
                             </h1>
                             <p className="mt-5 max-w-2xl text-base leading-8 text-[#CBD5E1] sm:text-lg">
-                                Uma experiencia elegante para testar permissoes diferentes, navegar por dashboards
-                                separados e sentir o produto funcionando mesmo em modo demo.
+                                Admins, organizadores e convidados entram em areas separadas, com permissoes claras e
+                                dados protegidos para a operacao real.
                             </p>
                             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         if (selectedAccount) {
-                                            chooseDemo(selectedAccount);
+                                            chooseLogin(selectedAccount);
                                         }
                                     }}
                                     className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-5 text-sm font-bold transition hover:scale-[1.03]"
                                 >
-                                    Usar perfil selecionado <ArrowRight className="h-4 w-4" />
+                                    Entrar na conta <ArrowRight className="h-4 w-4" />
                                 </button>
                                 <Link
                                     to="/"
@@ -473,7 +482,7 @@ export function AuthPage() {
                                                 type="button"
                                                 onClick={(event) => {
                                                     event.stopPropagation();
-                                                    chooseDemo(account);
+                                                    chooseLogin(account);
                                                 }}
                                                 className={
                                                     isSelected && mode === 'login'
@@ -543,15 +552,15 @@ export function AuthPage() {
                                         {step === 'verify_code'
                                             ? 'Confirme seu e-mail'
                                             : mode === 'login'
-                                            ? `Entrar como ${selectedAccount?.shortTitle}`
-                                            : `Cadastrar ${selectedAccount?.shortTitle}`}
+                                              ? `Entrar como ${selectedAccount?.shortTitle}`
+                                              : `Cadastrar ${selectedAccount?.shortTitle}`}
                                     </h2>
                                     <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
                                         {step === 'verify_code'
                                             ? `Digite o codigo de 6 digitos enviado para ${pendingEmail || form.email}.`
                                             : mode === 'login'
-                                            ? 'Use uma conta demo ou suas credenciais reais.'
-                                            : 'Crie uma conta real, confirme o e-mail e entre com token seguro.'}
+                                              ? 'Use o e-mail e a senha cadastrados na plataforma.'
+                                              : 'Crie sua conta, confirme o e-mail e acesse com token seguro.'}
                                     </p>
                                 </div>
 
@@ -576,27 +585,33 @@ export function AuthPage() {
                                                 Voltar para cadastro
                                             </button>
                                         </>
-                                    ) : mode === 'register' && (
-                                        <>
-                                            <InputField
-                                                value={form.name}
-                                                onChange={(value) => {
-                                                    setForm({ ...form, name: value });
-                                                }}
-                                                placeholder="Nome"
-                                            />
-                                            {role === 'owner' && (
+                                    ) : (
+                                        mode === 'register' && (
+                                            <>
                                                 <InputField
-                                                    value={form.partyName}
+                                                    value={form.name}
                                                     onChange={(value) => {
-                                                        setForm({ ...form, partyName: value });
+                                                        setForm({ ...form, name: value });
                                                     }}
-                                                    placeholder="Nome da festa"
+                                                    placeholder="Nome"
                                                 />
-                                            )}
-                                            {role === 'platform_admin' && <ReadonlyField value="Operacao da plataforma" />}
-                                            {role === 'guest' && <ReadonlyField value="demo-invite-token" />}
-                                        </>
+                                                {role === 'owner' && (
+                                                    <InputField
+                                                        value={form.partyName}
+                                                        onChange={(value) => {
+                                                            setForm({ ...form, partyName: value });
+                                                        }}
+                                                        placeholder="Nome da festa"
+                                                    />
+                                                )}
+                                                {role === 'platform_admin' && (
+                                                    <ReadonlyField value="Operacao da plataforma" />
+                                                )}
+                                                {role === 'guest' && (
+                                                    <ReadonlyField value="Convite recebido por e-mail" />
+                                                )}
+                                            </>
+                                        )
                                     )}
 
                                     {step === 'credentials' && (
@@ -629,7 +644,10 @@ export function AuthPage() {
                                             />
                                             <PasswordStrengthMeter strength={passwordStrength} />
                                             {!passwordsMatch && form.passwordConfirmation.length > 0 && (
-                                                <FeedbackMessage message="As senhas ainda nao conferem." tone="warning" />
+                                                <FeedbackMessage
+                                                    message="As senhas ainda nao conferem."
+                                                    tone="warning"
+                                                />
                                             )}
                                         </>
                                     )}
@@ -664,7 +682,7 @@ export function AuthPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
-                                        Senha definida no ambiente do backend
+                                        Autenticacao protegida por token de acesso
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {role === 'owner' && <PartyPopper className="h-4 w-4 text-[#22D3EE]" />}
@@ -681,7 +699,7 @@ export function AuthPage() {
                 <section className="relative z-10 grid gap-4 pb-12 md:grid-cols-[0.9fr_1.1fr]">
                     <PreviewCard role={role} />
                     <div className="grid gap-4 sm:grid-cols-2">
-                        {['Permissoes separadas', 'Fluxo demo clicavel'].map((item, index) => (
+                        {['Permissoes separadas', 'Fluxo validado'].map((item, index) => (
                             <motion.article
                                 key={item}
                                 whileHover={{ y: -5 }}
@@ -744,10 +762,10 @@ function PreviewCard({ role }: { role: UserRole }) {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-[#94A3B8]">Preview da area</p>
+                            <p className="text-xs text-[#94A3B8]">Visao da area</p>
                             <h2 className="text-lg font-bold">{title}</h2>
                         </div>
-                        <span className="rounded-lg bg-[#8B5CF6] px-3 py-2 text-xs font-bold">Demo</span>
+                        <span className="rounded-lg bg-[#8B5CF6] px-3 py-2 text-xs font-bold">Produção</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                         {previewMetrics.map((metric) => (
