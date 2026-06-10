@@ -172,7 +172,7 @@ export function PublicEventPage() {
             if (event.id === 'demo') {
                 await new Promise((resolve) => window.setTimeout(resolve, 500));
 
-                return { message: 'Codigo enviado. No modo demo, use qualquer codigo com 6 digitos.' };
+                return { message: 'Codigo enviado. Confira os 6 digitos para continuar.' };
             }
 
             const response = await fetch(apiUrl('/api/v1/rsvp/request-code'), {

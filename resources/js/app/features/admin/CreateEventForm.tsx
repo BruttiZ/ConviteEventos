@@ -22,8 +22,7 @@ interface CreateEventFormProps {
     onCreated?: (event: CreatedEventSummary) => void;
 }
 
-const defaultImage =
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
+const defaultImage = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
 
 export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
     const navigate = useNavigate();
@@ -121,7 +120,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
             };
 
             if (!session?.token || session.token.startsWith('demo-') || session.token.startsWith('super-user-token-')) {
-                throw new Error('Entre com uma conta real para criar eventos no banco.');
+                throw new Error('Entre com uma conta autorizada para criar eventos.');
             }
 
             let response: Response;
@@ -137,21 +136,26 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                     body: JSON.stringify(payload),
                 });
             } catch {
-                throw new Error('Nao foi possivel conectar na API Laravel. Verifique se o backend esta publicado e acessivel.');
+                throw new Error(
+                    'Nao foi possivel conectar na API Laravel. Verifique se o backend esta publicado e acessivel.',
+                );
             }
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
 
                 if (response.status === 404) {
-                    throw new Error('API de eventos nao encontrada neste deploy. Publique o Laravel ou configure VITE_API_URL.');
+                    throw new Error(
+                        'API de eventos nao encontrada neste deploy. Publique o Laravel ou configure VITE_API_URL.',
+                    );
                 }
 
                 const validationMessages =
                     errorData.errors && typeof errorData.errors === 'object'
                         ? Object.values(errorData.errors).flat().join(' ')
                         : null;
-                const errorMessage = validationMessages || errorData.message || errorData.error || 'Erro ao criar evento.';
+                const errorMessage =
+                    validationMessages || errorData.message || errorData.error || 'Erro ao criar evento.';
 
                 throw new Error(errorMessage);
             }
@@ -161,11 +165,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
             return { id: String(data.data?.id ?? Date.now()), event: createdEvent, source: 'api' };
         },
         onSuccess: (result) => {
-            setSuccess(
-                result.source === 'demo'
-                    ? 'Evento criado no modo demo e adicionado ao painel.'
-                    : 'Evento criado com sucesso na API.',
-            );
+            setSuccess('Evento criado com sucesso.');
             onCreated?.(result.event);
 
             if (!onCreated) {
@@ -259,7 +259,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                         <Field label="Fuso horario">
                             <select
                                 value={form.timezone}
-                                onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))}
+                                onChange={(event) =>
+                                    setForm((current) => ({ ...current, timezone: event.target.value }))
+                                }
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             >
@@ -286,7 +288,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 type="text"
                                 placeholder="Ex: Av. Paulista, 1000, Sao Paulo - SP"
                                 value={form.address}
-                                onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
+                                onChange={(event) =>
+                                    setForm((current) => ({ ...current, address: event.target.value }))
+                                }
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             />
@@ -374,15 +378,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
     );
 }
 
-function Field({
-    label,
-    icon: Icon,
-    children,
-}: {
-    label: string;
-    icon?: typeof Calendar;
-    children: ReactNode;
-}) {
+function Field({ label, icon: Icon, children }: { label: string; icon?: typeof Calendar; children: ReactNode }) {
     return (
         <label className="block">
             <span className="mb-2 flex items-center gap-2 text-sm font-medium text-[#CBD5E1]">
@@ -434,10 +430,4 @@ function formatEventDate(value: string): string {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
-}
-
-function waitForDemo(): Promise<void> {
-    return new Promise((resolve) => {
-        window.setTimeout(resolve, 500);
-    });
 }
