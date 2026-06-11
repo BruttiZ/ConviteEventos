@@ -22,21 +22,29 @@ type CreateEventFormProps = {
     onCreated?: (event: CreatedEventSummary) => void;
 };
 
-type EventCreateResponse = {
-    data?: {
-        id?: number | string;
-    };
-};
-
 type ApiErrorResponse = {
     message?: string;
     error?: string;
     errors?: Record<string, string[]>;
 };
 
+type CreateEventResponse = {
+    data?: {
+        id?: string | number;
+        title?: string;
+        starts_at?: string;
+        location?: string;
+    };
+};
+
+type CreateEventResult = {
+    id: string;
+    event: CreatedEventSummary;
+};
+
 const defaultImage = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
 
-function slugify(value: string): string {
+function eventSlug(value: string): string {
     return value
         .toLowerCase()
         .trim()
@@ -77,8 +85,8 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
         [form.name, form.startsAt, form.venueName],
     );
 
-    const createEvent = useMutation({
-        mutationFn: async () => {
+    const createEvent = useMutation<CreateEventResult>({
+        mutationFn: async (): Promise<CreateEventResult> => {
             setError(null);
             setSuccess(null);
 
@@ -95,35 +103,16 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
             }
 
             const createdEvent: CreatedEventSummary = preview;
-            const payload = {
-                name: form.name.trim(),
-                slug: form.slug.toLowerCase().trim(),
-                starts_at: form.startsAt,
-                ends_at: form.endsAt || null,
-                timezone: form.timezone,
-                venue_name: form.venueName.trim() || null,
-                address: form.address.trim() || null,
-                spotify_playlist_url: form.spotifyPlaylistUrl.trim() || null,
-                capacity: form.capacity ? parseInt(form.capacity, 10) : null,
-                hero: {
-                    title: `Bem-vindo a ${form.name.trim()}`,
-                    subtitle: 'Um evento incrivel',
-                    image_url: defaultImage,
-                },
-                content: {
-                    description: 'Descricao do evento',
-                    highlights: [],
-                },
-                theme: {
-                    primary: '#8B5CF6',
-                    accent: '#0EA5E9',
-                },
-                gallery: [],
-                seo: {
-                    title: form.name.trim(),
-                    description: 'Um evento incrivel no Invitely',
-                },
+            const payload: Record<string, string> = {
+                title: form.name.trim(),
+                description: 'Descricao do evento',
+                starts_at: new Date(form.startsAt).toISOString(),
+                location: [form.venueName.trim(), form.address.trim()].filter(Boolean).join(' - '),
             };
+
+            if (form.endsAt) {
+                payload.ends_at = new Date(form.endsAt).toISOString();
+            }
 
             if (!session?.token || session.token.startsWith('demo-') || session.token.startsWith('super-user-token-')) {
                 throw new Error('Entre com uma conta autorizada para criar eventos.');
@@ -132,7 +121,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
             let response: Response;
 
             try {
-                response = await fetch(apiUrl('/api/v1/admin/events'), {
+                response = await fetch(apiUrl('/events'), {
                     method: 'POST',
                     headers: {
                         Accept: 'application/json',
@@ -142,18 +131,14 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                     body: JSON.stringify(payload),
                 });
             } catch {
-                throw new Error(
-                    'Nao foi possivel conectar na API Laravel. Verifique se o backend esta publicado e acessivel.',
-                );
+                throw new Error('Nao foi possivel conectar na API de eventos. Verifique VITE_API_URL.');
             }
 
             if (!response.ok) {
                 const errorData = (await response.json().catch(() => ({}))) as ApiErrorResponse;
 
                 if (response.status === 404) {
-                    throw new Error(
-                        'API de eventos nao encontrada neste deploy. Publique o Laravel ou configure VITE_API_URL.',
-                    );
+                    throw new Error('API de eventos nao encontrada. Verifique se VITE_API_URL aponta para a API Go.');
                 }
 
                 const validationMessages =
@@ -166,9 +151,17 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                 throw new Error(errorMessage);
             }
 
-            const data = (await response.json()) as EventCreateResponse;
+            const data = (await response.json()) as CreateEventResponse;
+            const apiEvent = data.data;
+            const eventFromApi: CreatedEventSummary = {
+                ...createdEvent,
+                title: apiEvent?.title ?? createdEvent.title,
+                date: apiEvent?.starts_at ? formatEventDate(apiEvent.starts_at) : createdEvent.date,
+                place: apiEvent?.location ?? createdEvent.place,
+                status: 'Publicado',
+            };
 
-            return { id: String(data.data?.id ?? Date.now()), event: createdEvent, source: 'api' };
+            return { id: String(apiEvent?.id ?? Date.now()), event: eventFromApi };
         },
         onSuccess: (result) => {
             setSuccess('Evento criado com sucesso.');
@@ -222,7 +215,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 value={form.name}
                                 onChange={(event) => {
                                     const name = event.target.value;
-                                    setForm((current) => ({ ...current, name, slug: slugify(name) }));
+                                    setForm((current) => ({ ...current, name, slug: eventSlug(name) }));
                                 }}
                                 className="field-control"
                                 disabled={createEvent.isPending}

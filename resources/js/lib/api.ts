@@ -1,4 +1,4 @@
-const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
+const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
 
 export function apiUrl(path: string): string {
     if (/^https?:\/\//.test(path)) {
