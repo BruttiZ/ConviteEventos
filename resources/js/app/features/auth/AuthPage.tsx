@@ -23,32 +23,25 @@ import { SyntheticEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthSession, UserRole, roleLabel, storeSession } from '../../auth/session';
 import { apiUrl } from '../../../lib/api';
-import { envString } from '../../../lib/env';
 
 type AuthMode = 'login' | 'register';
-type AuthStep = 'credentials' | 'verify_code';
 
-type AuthMutationResult =
-    | {
-          kind: 'authenticated';
-          session: AuthSession;
-      }
-    | {
-          kind: 'pending_confirmation';
-          message: string;
-      };
-
-type LaravelAuthResponse = {
-    data?: AuthSession;
-    message?: string;
-    error?: string;
-    errors?: Record<string, string[]>;
+type AuthMutationResult = {
+    kind: 'authenticated';
+    session: AuthSession;
 };
 
-type LaravelPendingAuthResponse = {
-    data?: Partial<AuthSession> & {
-        email?: string;
-        expires_in_minutes?: number;
+type ApiAuthResponse = {
+    data?: {
+        access_token?: string;
+        token_type?: string;
+        user?: {
+            id: string;
+            tenant_id?: string | null;
+            email: string;
+            name: string;
+            role: string;
+        };
     };
     message?: string;
     error?: string;
@@ -72,8 +65,8 @@ const roleOptions: {
         shortTitle: 'Admin',
         description: 'Cuida do software, tenants, saude operacional, suporte e governanca.',
         registerHint: 'Perfil interno para operar a plataforma e monitorar clientes.',
-        email: envString(import.meta.env.VITE_DEMO_ADMIN_EMAIL),
-        defaultName: envString(import.meta.env.VITE_DEMO_ADMIN_NAME, 'Admin Invitely'),
+        email: import.meta.env.VITE_DEMO_ADMIN_EMAIL ?? '',
+        defaultName: import.meta.env.VITE_DEMO_ADMIN_NAME ?? 'Admin Invitely',
         gradient: 'from-[#A78BFA] to-[#0EA5E9]',
         icon: ShieldCheck,
     },
@@ -83,8 +76,8 @@ const roleOptions: {
         shortTitle: 'Organizador',
         description: 'Cria eventos, gerencia convidados, escolhe temas e acompanha RSVP.',
         registerHint: 'Ideal para cerimonialistas, anfitrioes e empresas que vendem eventos.',
-        email: envString(import.meta.env.VITE_DEMO_OWNER_EMAIL),
-        defaultName: envString(import.meta.env.VITE_DEMO_OWNER_NAME, 'Organizador'),
+        email: import.meta.env.VITE_DEMO_OWNER_EMAIL ?? '',
+        defaultName: import.meta.env.VITE_DEMO_OWNER_NAME ?? 'Organizador',
         gradient: 'from-[#8B5CF6] to-[#22D3EE]',
         icon: CalendarDays,
     },
@@ -94,8 +87,8 @@ const roleOptions: {
         shortTitle: 'Convidado',
         description: 'Ve o convite, confirma presenca, salva QR Code e acompanha detalhes.',
         registerHint: 'Ideal para convidados acompanharem convite, RSVP e QR Code em um so lugar.',
-        email: envString(import.meta.env.VITE_DEMO_GUEST_EMAIL),
-        defaultName: envString(import.meta.env.VITE_DEMO_GUEST_NAME, 'Convidado'),
+        email: import.meta.env.VITE_DEMO_GUEST_EMAIL ?? '',
+        defaultName: import.meta.env.VITE_DEMO_GUEST_NAME ?? 'Convidado',
         gradient: 'from-[#22C55E] to-[#22D3EE]',
         icon: TicketCheck,
     },
@@ -130,8 +123,8 @@ function uniqueEmail(email: string): string {
     return `${localPart}+novo-${Date.now().toString().slice(-4)}@${domain}`;
 }
 
-async function requestLaravelAuth(mode: AuthMode, payload: Record<string, string>): Promise<AuthSession> {
-    const response = await fetch(apiUrl(mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register'), {
+async function requestApiAuth(mode: AuthMode, payload: Record<string, string>): Promise<AuthSession> {
+    const response = await fetch(apiUrl(mode === 'login' ? '/auth/login' : '/auth/register'), {
         method: 'POST',
         headers: {
             Accept: 'application/json',
@@ -139,9 +132,9 @@ async function requestLaravelAuth(mode: AuthMode, payload: Record<string, string
         },
         body: JSON.stringify(payload),
     });
-    const data = (await response.json().catch(() => ({}))) as LaravelAuthResponse;
+    const data = (await response.json().catch(() => ({}))) as ApiAuthResponse;
 
-    if (!response.ok || !data.data) {
+    if (!response.ok || !data.data?.access_token || !data.data.user) {
         const validationMessage =
             data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null;
 
@@ -149,79 +142,11 @@ async function requestLaravelAuth(mode: AuthMode, payload: Record<string, string
     }
 
     return {
-        ...data.data,
+        token: data.data.access_token,
+        token_type: 'Bearer',
         user: {
             ...data.data.user,
-            role: normalizeRole(data.data.user.role),
-        },
-    };
-}
-
-async function requestRegistration(payload: Record<string, string>): Promise<AuthMutationResult> {
-    const response = await fetch(apiUrl('/api/v1/auth/register'), {
-        method: 'POST',
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
-    const data = (await response.json().catch(() => ({}))) as LaravelPendingAuthResponse;
-
-    if (!response.ok) {
-        const validationMessage =
-            data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null;
-
-        throw new Error(validationMessage ?? data.message ?? data.error ?? 'Nao foi possivel criar sua conta.');
-    }
-
-    if (data.data && 'token' in data.data) {
-        const session = data.data as AuthSession;
-
-        return {
-            kind: 'authenticated',
-            session: {
-                ...session,
-                user: {
-                    ...session.user,
-                    role: normalizeRole(session.user.role),
-                },
-            },
-        };
-    }
-
-    return {
-        kind: 'pending_confirmation',
-        message: data.message ?? 'Codigo de confirmacao enviado para o e-mail cadastrado.',
-    };
-}
-
-async function verifyLaravelEmailCode(email: string, code: string): Promise<AuthSession> {
-    const response = await fetch(apiUrl('/api/v1/auth/verify-email-code'), {
-        method: 'POST',
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email,
-            code,
-            device_name: 'Invitely Web',
-        }),
-    });
-    const data = (await response.json().catch(() => ({}))) as LaravelAuthResponse;
-
-    if (!response.ok || !data.data) {
-        const validationMessage =
-            data.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().join(' ') : null;
-
-        throw new Error(validationMessage ?? data.message ?? data.error ?? 'Nao foi possivel validar o codigo.');
-    }
-
-    return {
-        ...data.data,
-        user: {
-            ...data.data.user,
+            tenant_id: data.data.user.tenant_id ?? null,
             role: normalizeRole(data.data.user.role),
         },
     };
@@ -260,13 +185,10 @@ function formatErrorMessage(error: Error): string {
 export function AuthPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<AuthMode>('login');
-    const [step, setStep] = useState<AuthStep>('credentials');
     const [role, setRole] = useState<UserRole>('owner');
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
-    const [verificationCode, setVerificationCode] = useState('');
-    const [pendingEmail, setPendingEmail] = useState('');
     const [form, setForm] = useState({
-        name: envString(import.meta.env.VITE_DEMO_OWNER_NAME, 'Organizador'),
+        name: import.meta.env.VITE_DEMO_OWNER_NAME ?? 'Organizador',
         email: '',
         password: '',
         passwordConfirmation: '',
@@ -278,58 +200,35 @@ export function AuthPage() {
     const passwordsMatch = form.password.length > 0 && form.password === form.passwordConfirmation;
     const isRegisterValid =
         form.name.trim().length >= 2 && form.email.includes('@') && form.password.length >= 6 && passwordsMatch;
-    const canSubmit =
-        step === 'verify_code'
-            ? verificationCode.trim().length === 6
-            : mode === 'login'
-              ? form.email.includes('@') && form.password.length >= 6
-              : isRegisterValid;
+    const canSubmit = mode === 'login' ? form.email.includes('@') && form.password.length >= 6 : isRegisterValid;
 
     const auth = useMutation({
         mutationFn: async (): Promise<AuthMutationResult> => {
             setStatusMessage(null);
-
-            if (step === 'verify_code') {
-                const session = await verifyLaravelEmailCode(
-                    pendingEmail.length > 0 ? pendingEmail : form.email.trim(),
-                    verificationCode.trim(),
-                );
-
-                return { kind: 'authenticated', session };
-            }
 
             if (mode === 'register') {
                 if (!isRegisterValid) {
                     throw new Error('Preencha o cadastro e confirme a senha corretamente.');
                 }
 
-                return await requestRegistration({
+                const session = await requestApiAuth('register', {
                     name: form.name.trim(),
                     email: form.email.trim(),
                     password: form.password,
                     role,
-                    device_name: 'Invitely Web',
                 });
+
+                return { kind: 'authenticated', session };
             }
 
-            const session = await requestLaravelAuth('login', {
+            const session = await requestApiAuth('login', {
                 email: form.email.trim(),
                 password: form.password,
-                device_name: 'Invitely Web',
             });
 
             return { kind: 'authenticated', session };
         },
         onSuccess: (payload) => {
-            if (payload.kind === 'pending_confirmation') {
-                setPendingEmail(form.email.trim());
-                setVerificationCode('');
-                setStep('verify_code');
-                setStatusMessage(payload.message);
-
-                return;
-            }
-
             storeSession(payload.session);
             void navigate(destinationFor(payload.session.user.role));
         },
@@ -337,21 +236,17 @@ export function AuthPage() {
 
     function chooseLogin(account: (typeof roleOptions)[number]) {
         setMode('login');
-        setStep('credentials');
         selectRole(account);
     }
 
     function chooseRegister(account: (typeof roleOptions)[number]) {
         setMode('register');
-        setStep('credentials');
         selectRole(account, true);
     }
 
     function selectRole(account: (typeof roleOptions)[number], useUniqueEmail = false) {
         setRole(account.role);
         setStatusMessage(null);
-        setVerificationCode('');
-        setPendingEmail('');
         setForm((current) => ({
             ...current,
             name: account.defaultName,
@@ -408,7 +303,6 @@ export function AuthPage() {
                             type="button"
                             onClick={() => {
                                 setMode('register');
-                                setStep('credentials');
                             }}
                             className="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] px-4 text-sm font-semibold transition hover:scale-[1.03]"
                         >
@@ -544,7 +438,6 @@ export function AuthPage() {
                                             type="button"
                                             onClick={() => {
                                                 setMode(item);
-                                                setStep('credentials');
                                                 setStatusMessage(null);
                                             }}
                                             className={
@@ -563,91 +456,59 @@ export function AuthPage() {
                                         {roleLabel(role)}
                                     </p>
                                     <h2 className="mt-2 text-2xl font-extrabold">
-                                        {step === 'verify_code'
-                                            ? 'Confirme seu e-mail'
-                                            : mode === 'login'
-                                              ? `Entrar como ${selectedAccount?.shortTitle ?? roleLabel(role)}`
-                                              : `Cadastrar ${selectedAccount?.shortTitle ?? roleLabel(role)}`}
+                                        {mode === 'login'
+                                            ? `Entrar como ${selectedAccount?.shortTitle ?? roleLabel(role)}`
+                                            : `Cadastrar ${selectedAccount?.shortTitle ?? roleLabel(role)}`}
                                     </h2>
                                     <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
-                                        {step === 'verify_code'
-                                            ? `Digite o codigo de 6 digitos enviado para ${pendingEmail.length > 0 ? pendingEmail : form.email}.`
-                                            : mode === 'login'
-                                              ? 'Use o e-mail e a senha cadastrados na plataforma.'
-                                              : 'Crie sua conta, confirme o e-mail e acesse com token seguro.'}
+                                        {mode === 'login'
+                                            ? 'Use o e-mail e a senha cadastrados na plataforma.'
+                                            : 'Crie sua conta e entre direto com autenticacao protegida por token.'}
                                     </p>
                                 </div>
 
                                 <form className="mt-6 grid gap-3" onSubmit={submit}>
-                                    {step === 'verify_code' ? (
+                                    {mode === 'register' && (
                                         <>
                                             <InputField
-                                                value={verificationCode}
+                                                value={form.name}
                                                 onChange={(value) => {
-                                                    setVerificationCode(value.replace(/\D/g, '').slice(0, 6));
+                                                    setForm({ ...form, name: value });
                                                 }}
-                                                placeholder="Codigo de 6 digitos"
+                                                placeholder="Nome"
                                             />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setStep('credentials');
-                                                    setStatusMessage(null);
-                                                }}
-                                                className="h-11 rounded-xl border border-[#263247] bg-[#121827] px-4 text-sm font-bold text-white transition hover:border-[#22D3EE]/60"
-                                            >
-                                                Voltar para cadastro
-                                            </button>
-                                        </>
-                                    ) : (
-                                        mode === 'register' && (
-                                            <>
+                                            {role === 'owner' && (
                                                 <InputField
-                                                    value={form.name}
+                                                    value={form.partyName}
                                                     onChange={(value) => {
-                                                        setForm({ ...form, name: value });
+                                                        setForm({ ...form, partyName: value });
                                                     }}
-                                                    placeholder="Nome"
+                                                    placeholder="Nome da festa"
                                                 />
-                                                {role === 'owner' && (
-                                                    <InputField
-                                                        value={form.partyName}
-                                                        onChange={(value) => {
-                                                            setForm({ ...form, partyName: value });
-                                                        }}
-                                                        placeholder="Nome da festa"
-                                                    />
-                                                )}
-                                                {role === 'platform_admin' && (
-                                                    <ReadonlyField value="Operacao da plataforma" />
-                                                )}
-                                                {role === 'guest' && (
-                                                    <ReadonlyField value="Convite recebido por e-mail" />
-                                                )}
-                                            </>
-                                        )
-                                    )}
-
-                                    {step === 'credentials' && (
-                                        <>
-                                            <InputField
-                                                type="email"
-                                                value={form.email}
-                                                onChange={(value) => {
-                                                    setForm({ ...form, email: value });
-                                                }}
-                                                placeholder="email@exemplo.com"
-                                            />
-                                            <PasswordField
-                                                value={form.password}
-                                                onChange={(value) => {
-                                                    setForm({ ...form, password: value });
-                                                }}
-                                            />
+                                            )}
+                                            {role === 'platform_admin' && (
+                                                <ReadonlyField value="Operacao da plataforma" />
+                                            )}
+                                            {role === 'guest' && <ReadonlyField value="Convite recebido por e-mail" />}
                                         </>
                                     )}
 
-                                    {step === 'credentials' && mode === 'register' && (
+                                    <InputField
+                                        type="email"
+                                        value={form.email}
+                                        onChange={(value) => {
+                                            setForm({ ...form, email: value });
+                                        }}
+                                        placeholder="email@exemplo.com"
+                                    />
+                                    <PasswordField
+                                        value={form.password}
+                                        onChange={(value) => {
+                                            setForm({ ...form, password: value });
+                                        }}
+                                    />
+
+                                    {mode === 'register' && (
                                         <>
                                             <PasswordField
                                                 value={form.passwordConfirmation}
@@ -676,11 +537,7 @@ export function AuthPage() {
                                         ) : (
                                             <ArrowRight className="h-4 w-4" />
                                         )}
-                                        {step === 'verify_code'
-                                            ? 'Validar codigo e entrar'
-                                            : mode === 'login'
-                                              ? 'Entrar na area'
-                                              : 'Criar conta e enviar codigo'}
+                                        {mode === 'login' ? 'Entrar na area' : 'Criar conta e entrar'}
                                     </button>
 
                                     {auth.isError && (
