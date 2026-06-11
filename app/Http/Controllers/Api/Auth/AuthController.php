@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\UserEmailVerificationCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -64,7 +65,7 @@ final class AuthController extends Controller
 
         if (! $user || ! Hash::check((string) $request->validated('password'), $user->password)) {
             throw ValidationException::withMessages([
-                'email' => __('The provided credentials are incorrect.'),
+                'email' => __('E-mail ou senha incorretos.'),
             ]);
         }
 

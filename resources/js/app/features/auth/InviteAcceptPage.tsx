@@ -1,23 +1,17 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, TicketCheck, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, TicketCheck, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { apiUrl } from '../../../lib/api';
 
 type InviteStatus = 'loading' | 'valid' | 'expired' | 'accepted' | 'rejected' | 'error';
 
-interface InviteData {
+type InviteData = {
     guest_name: string;
     guest_email: string;
     event_name: string;
     event_date?: string;
-}
-
-const apiUrl = (path: string) => {
-    const url = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${url}${path}`;
 };
 
 export function InviteAcceptPage() {
@@ -80,13 +74,13 @@ export function InviteAcceptPage() {
                 throw new Error(error || 'Erro ao aceitar convite');
             }
 
-            return response.json();
+            return (await response.json()) as unknown;
         },
         onSuccess: () => {
             setStatus('accepted');
             // Redirect to login after 2 seconds
             setTimeout(() => {
-                navigate('/auth?mode=register&role=guest');
+                void navigate('/auth?mode=register&role=guest');
             }, 2000);
         },
         onError: (error) => {
@@ -110,13 +104,13 @@ export function InviteAcceptPage() {
                 throw new Error(error || 'Erro ao recusar convite');
             }
 
-            return response.json();
+            return (await response.json()) as unknown;
         },
         onSuccess: () => {
             setStatus('rejected');
             // Redirect to home after 2 seconds
             setTimeout(() => {
-                navigate('/');
+                void navigate('/');
             }, 2000);
         },
         onError: (error) => {
@@ -206,7 +200,9 @@ export function InviteAcceptPage() {
 
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <button
-                                    onClick={() => acceptMutation.mutate()}
+                                    onClick={() => {
+                                        acceptMutation.mutate();
+                                    }}
                                     disabled={acceptMutation.isPending}
                                     className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] to-[#0EA5E9] font-bold text-white transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                                 >
@@ -215,7 +211,9 @@ export function InviteAcceptPage() {
                                 </button>
 
                                 <button
-                                    onClick={() => rejectMutation.mutate()}
+                                    onClick={() => {
+                                        rejectMutation.mutate();
+                                    }}
                                     disabled={rejectMutation.isPending}
                                     className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-[#263247] bg-[#0B0F1A] font-bold text-[#F59E0B] transition hover:border-[#F59E0B]/50 hover:bg-[#F59E0B]/10 disabled:cursor-not-allowed disabled:opacity-60"
                                 >

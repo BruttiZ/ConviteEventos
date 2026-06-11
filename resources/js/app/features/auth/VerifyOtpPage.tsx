@@ -1,22 +1,22 @@
 import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Loader2, Mail, Sparkles } from 'lucide-react';
-import { SyntheticEvent, useEffect, useState } from 'react';
+import { SyntheticEvent, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthSession, storeSession } from '../../auth/session';
 import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase';
 
 type VerifyStep = 'requesting' | 'verifying' | 'done';
 
-interface VerifyOtpPageProps {
+type VerifyOtpPageProps = {
     /**
      * Email can be passed via URL search param or component prop
      */
     email?: string;
-}
+};
 
 function toAuthSession(accessToken: string, userId: string, email: string): AuthSession {
-    const safeEmail = email || 'usuario@invitely.dev';
+    const safeEmail = email.length > 0 ? email : 'usuario@invitely.dev';
 
     return {
         token: accessToken,
@@ -36,7 +36,7 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
     const [searchParams] = useSearchParams();
     const [step, setStep] = useState<VerifyStep>('requesting');
     const [error, setError] = useState<string | null>(null);
-    const [email, setEmail] = useState(initialEmail || searchParams.get('email') || '');
+    const [email, setEmail] = useState(initialEmail ?? searchParams.get('email') ?? '');
     const [code, setCode] = useState('');
     const [message, setMessage] = useState<string | null>(null);
 
@@ -86,7 +86,7 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
             });
 
             if (error) {
-                throw new Error(error.message || 'Código inválido ou expirado.');
+                throw new Error(error.message);
             }
 
             if (!data.session || !data.user) {
@@ -94,13 +94,13 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
             }
 
             // Store session and redirect
-            const session = toAuthSession(data.session.access_token, data.user.id, data.user.email || '');
+            const session = toAuthSession(data.session.access_token, data.user.id, data.user.email ?? '');
             storeSession(session);
             setMessage('Autenticação bem-sucedida! Redirecionando...');
             setStep('done');
 
             setTimeout(() => {
-                navigate('/admin');
+                void navigate('/admin');
             }, 1500);
         },
         onError: (err: Error) => {
@@ -117,13 +117,6 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
         e.preventDefault();
         verifyOtp.mutate();
     };
-
-    // Auto-request OTP if email is provided via prop or URL
-    useEffect(() => {
-        if (email && step === 'requesting' && !requestOtp.isPending) {
-            // Don't auto-request, let user control it
-        }
-    }, [email, step, requestOtp.isPending]);
 
     return (
         <main className="min-h-screen overflow-x-hidden bg-[#060B1A] text-white">
@@ -224,7 +217,9 @@ export function VerifyOtpPage({ email: initialEmail }: VerifyOtpPageProps) {
                                             type="email"
                                             placeholder="seu@email.com"
                                             value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
+                                            onChange={(e) => {
+                                                setEmail(e.target.value);
+                                            }}
                                             className="mt-2 h-11 w-full rounded-xl border border-[#263247] bg-[#0B0F1A] px-4 text-white outline-none transition focus:border-[#22D3EE]"
                                             disabled={requestOtp.isPending}
                                         />

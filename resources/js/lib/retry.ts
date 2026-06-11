@@ -42,7 +42,7 @@ export async function retryWithExponentialBackoff<T>(
                 const totalDelay = delayMs + jitterMs;
 
                 console.warn(
-                    `Rate limit or transient error (attempt ${attempt}/${maxAttempts}). Retrying in ${Math.round(totalDelay)}ms...`,
+                    `Rate limit or transient error (attempt ${String(attempt)}/${String(maxAttempts)}). Retrying in ${String(Math.round(totalDelay))}ms...`,
                 );
 
                 await new Promise((resolve) => setTimeout(resolve, totalDelay));
@@ -50,5 +50,5 @@ export async function retryWithExponentialBackoff<T>(
         }
     }
 
-    throw lastError || new Error('Max retry attempts reached');
+    throw lastError ?? new Error('Max retry attempts reached');
 }

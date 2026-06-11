@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowLeft, Calendar, CheckCircle2, Clock, Loader2, MapPin, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { SyntheticEvent, useEffect, useMemo, useState } from 'react';
+import { SyntheticEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiUrl } from '../../../lib/api';
 import { getStoredSession } from '../../auth/session';
@@ -17,13 +17,35 @@ export type CreatedEventSummary = {
     image: string;
 };
 
-interface CreateEventFormProps {
+type CreateEventFormProps = {
     onCancel?: () => void;
     onCreated?: (event: CreatedEventSummary) => void;
-}
+};
 
-const defaultImage =
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
+type EventCreateResponse = {
+    data?: {
+        id?: number | string;
+    };
+};
+
+type ApiErrorResponse = {
+    message?: string;
+    error?: string;
+    errors?: Record<string, string[]>;
+};
+
+const defaultImage = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=80';
+
+function slugify(value: string): string {
+    return value
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+}
 
 export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
     const navigate = useNavigate();
@@ -54,23 +76,6 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
         }),
         [form.name, form.startsAt, form.venueName],
     );
-
-    useEffect(() => {
-        if (!form.name) {
-            return;
-        }
-
-        const generatedSlug = form.name
-            .toLowerCase()
-            .trim()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-');
-
-        setForm((current) => ({ ...current, slug: generatedSlug }));
-    }, [form.name]);
 
     const createEvent = useMutation({
         mutationFn: async () => {
@@ -121,7 +126,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
             };
 
             if (!session?.token || session.token.startsWith('demo-') || session.token.startsWith('super-user-token-')) {
-                throw new Error('Entre com uma conta real para criar eventos no banco.');
+                throw new Error('Entre com uma conta autorizada para criar eventos.');
             }
 
             let response: Response;
@@ -137,39 +142,40 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                     body: JSON.stringify(payload),
                 });
             } catch {
-                throw new Error('Nao foi possivel conectar na API Laravel. Verifique se o backend esta publicado e acessivel.');
+                throw new Error(
+                    'Nao foi possivel conectar na API Laravel. Verifique se o backend esta publicado e acessivel.',
+                );
             }
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
+                const errorData = (await response.json().catch(() => ({}))) as ApiErrorResponse;
 
                 if (response.status === 404) {
-                    throw new Error('API de eventos nao encontrada neste deploy. Publique o Laravel ou configure VITE_API_URL.');
+                    throw new Error(
+                        'API de eventos nao encontrada neste deploy. Publique o Laravel ou configure VITE_API_URL.',
+                    );
                 }
 
                 const validationMessages =
                     errorData.errors && typeof errorData.errors === 'object'
                         ? Object.values(errorData.errors).flat().join(' ')
                         : null;
-                const errorMessage = validationMessages || errorData.message || errorData.error || 'Erro ao criar evento.';
+                const errorMessage =
+                    validationMessages ?? errorData.message ?? errorData.error ?? 'Erro ao criar evento.';
 
                 throw new Error(errorMessage);
             }
 
-            const data = await response.json();
+            const data = (await response.json()) as EventCreateResponse;
 
             return { id: String(data.data?.id ?? Date.now()), event: createdEvent, source: 'api' };
         },
         onSuccess: (result) => {
-            setSuccess(
-                result.source === 'demo'
-                    ? 'Evento criado no modo demo e adicionado ao painel.'
-                    : 'Evento criado com sucesso na API.',
-            );
+            setSuccess('Evento criado com sucesso.');
             onCreated?.(result.event);
 
             if (!onCreated) {
-                navigate(`/admin/events/${result.id}`);
+                void navigate(`/admin/events/${result.id}`);
             }
         },
         onError: (mutationError: Error) => {
@@ -179,7 +185,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
 
     function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault();
-        void createEvent.mutate();
+        createEvent.mutate();
     }
 
     return (
@@ -214,7 +220,10 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 type="text"
                                 placeholder="Ex: Lancamento do Invitely"
                                 value={form.name}
-                                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                                onChange={(event) => {
+                                    const name = event.target.value;
+                                    setForm((current) => ({ ...current, name, slug: slugify(name) }));
+                                }}
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             />
@@ -224,7 +233,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 type="text"
                                 placeholder="lancamento-invitely"
                                 value={form.slug}
-                                onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
+                                onChange={(event) => {
+                                    setForm((current) => ({ ...current, slug: event.target.value }));
+                                }}
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             />
@@ -237,9 +248,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 <input
                                     type="datetime-local"
                                     value={form.startsAt}
-                                    onChange={(event) =>
-                                        setForm((current) => ({ ...current, startsAt: event.target.value }))
-                                    }
+                                    onChange={(event) => {
+                                        setForm((current) => ({ ...current, startsAt: event.target.value }));
+                                    }}
                                     className="field-control"
                                     disabled={createEvent.isPending}
                                 />
@@ -248,9 +259,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 <input
                                     type="datetime-local"
                                     value={form.endsAt}
-                                    onChange={(event) =>
-                                        setForm((current) => ({ ...current, endsAt: event.target.value }))
-                                    }
+                                    onChange={(event) => {
+                                        setForm((current) => ({ ...current, endsAt: event.target.value }));
+                                    }}
                                     className="field-control"
                                     disabled={createEvent.isPending}
                                 />
@@ -259,7 +270,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                         <Field label="Fuso horario">
                             <select
                                 value={form.timezone}
-                                onChange={(event) => setForm((current) => ({ ...current, timezone: event.target.value }))}
+                                onChange={(event) => {
+                                    setForm((current) => ({ ...current, timezone: event.target.value }));
+                                }}
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             >
@@ -274,9 +287,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 type="text"
                                 placeholder="Ex: Atelier Vista"
                                 value={form.venueName}
-                                onChange={(event) =>
-                                    setForm((current) => ({ ...current, venueName: event.target.value }))
-                                }
+                                onChange={(event) => {
+                                    setForm((current) => ({ ...current, venueName: event.target.value }));
+                                }}
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             />
@@ -286,7 +299,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                 type="text"
                                 placeholder="Ex: Av. Paulista, 1000, Sao Paulo - SP"
                                 value={form.address}
-                                onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
+                                onChange={(event) => {
+                                    setForm((current) => ({ ...current, address: event.target.value }));
+                                }}
                                 className="field-control"
                                 disabled={createEvent.isPending}
                             />
@@ -300,9 +315,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                     type="url"
                                     placeholder="https://open.spotify.com/playlist/..."
                                     value={form.spotifyPlaylistUrl}
-                                    onChange={(event) =>
-                                        setForm((current) => ({ ...current, spotifyPlaylistUrl: event.target.value }))
-                                    }
+                                    onChange={(event) => {
+                                        setForm((current) => ({ ...current, spotifyPlaylistUrl: event.target.value }));
+                                    }}
                                     className="field-control"
                                     disabled={createEvent.isPending}
                                 />
@@ -312,9 +327,9 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
                                     type="number"
                                     placeholder="500"
                                     value={form.capacity}
-                                    onChange={(event) =>
-                                        setForm((current) => ({ ...current, capacity: event.target.value }))
-                                    }
+                                    onChange={(event) => {
+                                        setForm((current) => ({ ...current, capacity: event.target.value }));
+                                    }}
                                     min="1"
                                     max="100000"
                                     className="field-control"
@@ -374,15 +389,7 @@ export function CreateEventForm({ onCancel, onCreated }: CreateEventFormProps) {
     );
 }
 
-function Field({
-    label,
-    icon: Icon,
-    children,
-}: {
-    label: string;
-    icon?: typeof Calendar;
-    children: ReactNode;
-}) {
+function Field({ label, icon: Icon, children }: { label: string; icon?: typeof Calendar; children: ReactNode }) {
     return (
         <label className="block">
             <span className="mb-2 flex items-center gap-2 text-sm font-medium text-[#CBD5E1]">
@@ -434,10 +441,4 @@ function formatEventDate(value: string): string {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
-}
-
-function waitForDemo(): Promise<void> {
-    return new Promise((resolve) => {
-        window.setTimeout(resolve, 500);
-    });
 }

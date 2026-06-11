@@ -10,7 +10,12 @@ export function isSupabaseConfigured(): boolean {
 
     // Log for debugging
     if (!isConfigured) {
-        console.warn('⚠️ Supabase não configurado. URLs, VITE_SUPABASE_URL:', !!hasUrl, 'VITE_SUPABASE_ANON_KEY:', !!hasKey);
+        console.warn(
+            '⚠️ Supabase não configurado. URLs, VITE_SUPABASE_URL:',
+            hasUrl,
+            'VITE_SUPABASE_ANON_KEY:',
+            hasKey,
+        );
     }
 
     return isConfigured;
@@ -23,7 +28,7 @@ export function getSupabaseClient(): SupabaseClient {
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error(
             'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para usar login e cadastro normal. ' +
-            'Você ainda pode usar o Super User (admin@invitely.local) se configurar VITE_SUPER_USER_EMAIL e VITE_SUPER_USER_PASSWORD.',
+                'Você ainda pode usar o Super User (admin@invitely.local) se configurar VITE_SUPER_USER_EMAIL e VITE_SUPER_USER_PASSWORD.',
         );
     }
 

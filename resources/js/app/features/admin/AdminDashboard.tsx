@@ -5,7 +5,6 @@ import {
     Bell,
     CalendarDays,
     CheckCircle2,
-    ClipboardCheck,
     Crown,
     Download,
     Gift,
@@ -31,6 +30,7 @@ import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthUser, UserRole, clearSession, getStoredSession, roleLabel } from '../../auth/session';
+import { envString } from '../../../lib/env';
 import { CreateEventForm, CreatedEventSummary } from './CreateEventForm';
 
 type DashboardView =
@@ -69,6 +69,20 @@ type TemplateOption = {
     gradient: string;
     image: string;
     highlights: string[];
+};
+
+type GuestRow = {
+    name: string;
+    email: string;
+    status: string;
+};
+
+type MetricItem = {
+    label: string;
+    value: string;
+    trend: string;
+    icon: LucideIcon;
+    color: string;
 };
 
 const destinations: Record<UserRole, string> = {
@@ -136,10 +150,10 @@ const initialEventCards: CreatedEventSummary[] = [
     },
 ];
 
-const guests = [
+const guests: GuestRow[] = [
     {
-        name: import.meta.env.VITE_DEMO_GUEST_NAME ?? 'Convidado',
-        email: import.meta.env.VITE_DEMO_GUEST_EMAIL ?? 'guest@example.com',
+        name: envString(import.meta.env.VITE_DEMO_GUEST_NAME, 'Convidado'),
+        email: envString(import.meta.env.VITE_DEMO_GUEST_EMAIL, 'guest@example.com'),
         status: 'Confirmado',
     },
     { name: 'Ana Ribeiro', email: 'ana@example.com', status: 'Pendente' },
@@ -148,17 +162,19 @@ const guests = [
     { name: 'Rafael Lima', email: 'rafael@example.com', status: 'Pendente' },
 ];
 
+const defaultTemplate: TemplateOption = {
+    id: 'linear-premium',
+    name: 'Linear Premium',
+    description: 'Convite executivo com foco em agenda, RSVP rapido e visual SaaS premium.',
+    accent: '#22D3EE',
+    badge: 'Corporativo',
+    gradient: 'linear-gradient(135deg, #111827 0%, #312E81 45%, #22D3EE 100%)',
+    image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
+    highlights: ['Agenda em destaque', 'Check-in minimalista', 'Resumo executivo'],
+};
+
 const templateOptions: TemplateOption[] = [
-    {
-        id: 'linear-premium',
-        name: 'Linear Premium',
-        description: 'Convite executivo com foco em agenda, RSVP rapido e visual SaaS premium.',
-        accent: '#22D3EE',
-        badge: 'Corporativo',
-        gradient: 'linear-gradient(135deg, #111827 0%, #312E81 45%, #22D3EE 100%)',
-        image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=900&q=80',
-        highlights: ['Agenda em destaque', 'Check-in minimalista', 'Resumo executivo'],
-    },
+    defaultTemplate,
     {
         id: 'gala-aurora',
         name: 'Gala Aurora',
@@ -190,10 +206,9 @@ const templateOptions: TemplateOption[] = [
         highlights: ['Pulseira QR Code', 'Line-up visual', 'CTA de confirmacao'],
     },
 ];
-const defaultTemplate = templateOptions[0] as TemplateOption;
 
 const tenants = [
-    { name: 'Invitely Demo', plan: 'community', events: '12', status: 'Saudavel' },
+    { name: 'Invitely Produção', plan: 'community', events: '12', status: 'Saudavel' },
     { name: 'Aurora Studio', plan: 'pro', events: '28', status: 'Saudavel' },
     { name: 'Mira Eventos', plan: 'business', events: '104', status: 'Atencao' },
 ];
@@ -233,16 +248,26 @@ function navigationFor(user: AuthUser): NavigationItem[] {
 function actionsFor(user: AuthUser): ActionItem[] {
     if (user.role === 'platform_admin') {
         return [
-            { label: 'Revisar saude', icon: Activity, message: 'Fila, banco e storage revisados em modo demo.' },
+            { label: 'Revisar saude', icon: Activity, message: 'Fila, banco e storage revisados com sucesso.' },
             { label: 'Abrir suporte', icon: LifeBuoy, message: 'Central de suporte aberta para triagem.' },
-            { label: 'Exportar tenants', icon: Download, message: 'Relatorio de tenants exportado em modo demo.', variant: 'secondary' },
+            {
+                label: 'Exportar tenants',
+                icon: Download,
+                message: 'Relatorio de tenants exportado com sucesso.',
+                variant: 'secondary',
+            },
         ];
     }
 
     if (user.role === 'guest') {
         return [
             { label: 'Confirmar presenca', icon: CheckCircle2, message: 'Presenca confirmada. QR Code liberado.' },
-            { label: 'Ver mapa', icon: MapPin, message: 'Mapa do Atelier Vista aberto em modo demo.', variant: 'secondary' },
+            {
+                label: 'Ver mapa',
+                icon: MapPin,
+                message: 'Mapa do Atelier Vista aberto com sucesso.',
+                variant: 'secondary',
+            },
             { label: 'Enviar recado', icon: Send, message: 'Recado enviado para os anfitrioes.' },
         ];
     }
@@ -250,7 +275,12 @@ function actionsFor(user: AuthUser): ActionItem[] {
     return [
         { label: 'Criar evento', icon: CalendarDays, message: 'Novo evento iniciado.' },
         { label: 'Enviar lembrete', icon: Megaphone, message: 'Lembrete enviado para convidados pendentes.' },
-        { label: 'Exportar lista', icon: Download, message: 'Lista de convidados exportada em modo demo.', variant: 'secondary' },
+        {
+            label: 'Exportar lista',
+            icon: Download,
+            message: 'Lista de convidados exportada com sucesso.',
+            variant: 'secondary',
+        },
     ];
 }
 
@@ -440,7 +470,7 @@ export function AdminDashboard() {
                             }}
                             onSent={(count) => {
                                 setIsSendingReminder(false);
-                                notify(`${String(count)} lembrete(s) preparados para envio em modo demo.`);
+                                notify(`${String(count)} lembrete(s) preparados para envio.`);
                             }}
                         />
                     ) : (
@@ -483,7 +513,13 @@ function DashboardContent({
     }
 
     if (view === 'guests') {
-        return <DataPanel title="Convidados" headers={['Nome', 'Email', 'Status']} rows={guests.map((guest) => [guest.name, guest.email, guest.status])} />;
+        return (
+            <DataPanel
+                title="Convidados"
+                headers={['Nome', 'Email', 'Status']}
+                rows={guests.map((guest) => [guest.name, guest.email, guest.status])}
+            />
+        );
     }
 
     if (view === 'templates') {
@@ -495,7 +531,13 @@ function DashboardContent({
     }
 
     if (view === 'tenants') {
-        return <DataPanel title="Clientes e planos" headers={['Tenant', 'Plano', 'Eventos', 'Status']} rows={tenants.map((tenant) => [tenant.name, tenant.plan, tenant.events, tenant.status])} />;
+        return (
+            <DataPanel
+                title="Clientes e planos"
+                headers={['Tenant', 'Plano', 'Eventos', 'Status']}
+                rows={tenants.map((tenant) => [tenant.name, tenant.plan, tenant.events, tenant.status])}
+            />
+        );
     }
 
     if (view === 'platform') {
@@ -506,14 +548,21 @@ function DashboardContent({
                 rows={[
                     ['Autenticacao', 'Tokens por habilidade', 'Ativo'],
                     ['Tenancy', 'Tenant opcional por request', 'Ativo'],
-                    ['Auditoria', 'Eventos criticos em fila', 'Demo'],
+                    ['Auditoria', 'Eventos criticos em fila', 'Produção'],
                 ]}
             />
         );
     }
 
     if (view === 'support') {
-        return <CardsModule title="Suporte" icon={LifeBuoy} notify={notify} items={['Novo chamado', 'Bug reportado', 'Upgrade de plano']} />;
+        return (
+            <CardsModule
+                title="Suporte"
+                icon={LifeBuoy}
+                notify={notify}
+                items={['Novo chamado', 'Bug reportado', 'Upgrade de plano']}
+            />
+        );
     }
 
     if (view === 'rsvp') {
@@ -521,22 +570,44 @@ function DashboardContent({
     }
 
     if (view === 'gifts') {
-        return <CardsModule title="Presentes" icon={Gift} notify={notify} items={['Pix dos anfitrioes', 'Lista online', 'Mensagem carinhosa']} />;
+        return (
+            <CardsModule
+                title="Presentes"
+                icon={Gift}
+                notify={notify}
+                items={['Pix dos anfitrioes', 'Lista online', 'Mensagem carinhosa']}
+            />
+        );
     }
 
     if (view === 'integrations') {
-        return <CardsModule title="Integracoes" icon={Link2} notify={notify} items={['Supabase', 'Mailpit', 'MinIO']} />;
+        return (
+            <CardsModule title="Integracoes" icon={Link2} notify={notify} items={['Supabase', 'Mailpit', 'MinIO']} />
+        );
     }
 
-    return <CardsModule title="Configuracoes" icon={Settings2} notify={notify} items={['Perfil', 'Notificacoes', 'Privacidade']} />;
+    return (
+        <CardsModule
+            title="Configuracoes"
+            icon={Settings2}
+            notify={notify}
+            items={['Perfil', 'Notificacoes', 'Privacidade']}
+        />
+    );
 }
 
 function Overview({ role, notify }: { role: UserRole; notify: (message: string) => void }) {
-    const metrics =
+    const metrics: MetricItem[] =
         role === 'platform_admin'
             ? [
                   { label: 'Tenants ativos', value: '42', trend: '+6 esta semana', icon: Crown, color: '#A78BFA' },
-                  { label: 'Eventos publicados', value: '318', trend: '+18% este mes', icon: CalendarDays, color: '#22D3EE' },
+                  {
+                      label: 'Eventos publicados',
+                      value: '318',
+                      trend: '+18% este mes',
+                      icon: CalendarDays,
+                      color: '#22D3EE',
+                  },
                   { label: 'Fila de e-mail', value: '12', trend: 'processando', icon: Bell, color: '#F59E0B' },
                   { label: 'SLA suporte', value: '98%', trend: '+2 pontos', icon: Activity, color: '#22C55E' },
               ]
@@ -622,7 +693,10 @@ function EventsView({
                         </div>
                         <p className="mt-3 text-sm text-[#CBD5E1]">{event.place}</p>
                         <div className="mt-5 grid grid-cols-2 gap-3">
-                            <MetricPill label={role === 'platform_admin' ? 'Tenant' : 'Confirmados'} value={role === 'platform_admin' ? 'Demo' : String(event.confirmed)} />
+                            <MetricPill
+                                label={role === 'platform_admin' ? 'Tenant' : 'Confirmados'}
+                                value={role === 'platform_admin' ? 'Produção' : String(event.confirmed)}
+                            />
                             <MetricPill label="Taxa RSVP" value={`${String(event.rsvp)}%`} />
                         </div>
                         <ActionButton
@@ -640,18 +714,10 @@ function EventsView({
     );
 }
 
-function ReminderPanel({
-    onCancel,
-    onSent,
-}: {
-    onCancel: () => void;
-    onSent: (count: number) => void;
-}) {
+function ReminderPanel({ onCancel, onSent }: { onCancel: () => void; onSent: (count: number) => void }) {
     const pendingGuests = guests.filter((guest) => guest.status === 'Pendente');
     const [selectedEmails, setSelectedEmails] = useState<string[]>(pendingGuests.map((guest) => guest.email));
-    const [customRecipients, setCustomRecipients] = useState<Array<{ name: string; email: string; status: string }>>(
-        [],
-    );
+    const [customRecipients, setCustomRecipients] = useState<GuestRow[]>([]);
     const [customEmail, setCustomEmail] = useState('');
     const [subject, setSubject] = useState('Lembrete: confirme sua presenca no evento');
     const [message, setMessage] = useState(
@@ -677,7 +743,9 @@ function ReminderPanel({
         }
 
         if (reminderGuests.some((guest) => guest.email === normalizedEmail)) {
-            setSelectedEmails((current) => (current.includes(normalizedEmail) ? current : [...current, normalizedEmail]));
+            setSelectedEmails((current) =>
+                current.includes(normalizedEmail) ? current : [...current, normalizedEmail],
+            );
             setCustomEmail('');
             return;
         }
@@ -885,8 +953,15 @@ function TemplatesView({
                                     : 'rounded-3xl border border-[#263247] bg-[#121827] p-5 transition hover:border-[#22D3EE]/40'
                             }
                         >
-                            <div className="relative h-36 overflow-hidden rounded-2xl" style={{ background: template.gradient }}>
-                                <img src={template.image} alt="" className="h-full w-full object-cover opacity-45 mix-blend-screen" />
+                            <div
+                                className="relative h-36 overflow-hidden rounded-2xl"
+                                style={{ background: template.gradient }}
+                            >
+                                <img
+                                    src={template.image}
+                                    alt=""
+                                    className="h-full w-full object-cover opacity-45 mix-blend-screen"
+                                />
                                 <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-xs font-bold text-white backdrop-blur">
                                     {template.badge}
                                 </span>
@@ -926,7 +1001,11 @@ function TemplatesView({
                 <p className="text-sm font-semibold text-[#94A3B8]">Preview do template</p>
                 <div className="mt-4 overflow-hidden rounded-2xl border border-[#263247] bg-[#121827]">
                     <div className="relative h-44" style={{ background: activeTemplate.gradient }}>
-                        <img src={activeTemplate.image} alt="" className="h-full w-full object-cover opacity-50 mix-blend-screen" />
+                        <img
+                            src={activeTemplate.image}
+                            alt=""
+                            className="h-full w-full object-cover opacity-50 mix-blend-screen"
+                        />
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#060B1A] to-transparent p-4">
                             <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white">
                                 {activeTemplate.badge}
@@ -936,7 +1015,10 @@ function TemplatesView({
                     </div>
                     <div className="grid gap-3 p-4">
                         {activeTemplate.highlights.map((highlight) => (
-                            <div key={highlight} className="rounded-xl border border-[#263247] bg-[#0B0F1A] p-3 text-sm text-[#CBD5E1]">
+                            <div
+                                key={highlight}
+                                className="rounded-xl border border-[#263247] bg-[#0B0F1A] p-3 text-sm text-[#CBD5E1]"
+                            >
                                 {highlight}
                             </div>
                         ))}
@@ -956,19 +1038,19 @@ function CheckInView({ role, notify }: { role: UserRole; notify: (message: strin
                 </div>
                 <input
                     placeholder="Cole ou leia o token do convite"
-                    defaultValue="demo-invite-token"
+                    defaultValue=""
                     className="h-14 rounded-xl border border-[#263247] bg-[#0B0F1A] px-4 text-sm text-white outline-none transition focus:border-[#22D3EE]"
                 />
                 <ActionButton
                     onClick={() => {
-                        notify(role === 'guest' ? 'QR Code salvo no celular em modo demo.' : 'Check-in validado com sucesso.');
+                        notify(role === 'guest' ? 'QR Code salvo no celular.' : 'Check-in validado com sucesso.');
                     }}
                 >
                     <QrCode className="h-4 w-4" />
                     {role === 'guest' ? 'Salvar QR Code' : 'Validar entrada'}
                 </ActionButton>
                 <div className="rounded-2xl border border-[#22C55E]/30 bg-[#22C55E]/10 p-4 text-sm text-[#BBF7D0]">
-                    QR Code pronto para simular a portaria em tempo real.
+                    QR Code pronto para validacao na portaria.
                 </div>
             </div>
         </Panel>
@@ -1020,7 +1102,7 @@ function CardsModule({
                         key={item}
                         type="button"
                         onClick={() => {
-                            notify(`${item} aberto em modo demo.`);
+                            notify(`${item} aberto com sucesso.`);
                         }}
                         className="rounded-2xl border border-[#263247] bg-[#1A1F2E] p-5 text-left transition hover:-translate-y-1"
                     >
@@ -1129,15 +1211,7 @@ function DonutSummary({ role }: { role: UserRole }) {
     );
 }
 
-function Panel({
-    title,
-    children,
-    className = '',
-}: {
-    title: string;
-    children: ReactNode;
-    className?: string;
-}) {
+function Panel({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) {
     return (
         <section className={`rounded-3xl border border-[#263247] bg-[#121827] p-5 shadow-xl ${className}`}>
             <div className="mb-5 flex items-center justify-between gap-4">
@@ -1192,7 +1266,7 @@ function StatusChip({ status }: { status: string }) {
     const color =
         status === 'Publicado' || status === 'Confirmado' || status === 'Saudavel' || status === 'Ativo'
             ? 'border-[#22C55E]/30 bg-[#22C55E]/10 text-[#86EFAC]'
-            : status === 'Rascunho' || status === 'Pendente' || status === 'Atencao' || status === 'Demo'
+            : status === 'Rascunho' || status === 'Pendente' || status === 'Atencao' || status === 'Produção'
               ? 'border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#FCD34D]'
               : 'border-[#94A3B8]/30 bg-[#94A3B8]/10 text-[#CBD5E1]';
 

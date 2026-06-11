@@ -25,6 +25,7 @@ services:
       context: .
       target: app
     environment:
+      APP_NAME: Invitely
       APP_ENV: local
       APP_DEBUG: "true"
       DB_CONNECTION: pgsql
@@ -40,6 +41,8 @@ services:
       MAIL_MAILER: smtp
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: no-reply@invitely.app
+      MAIL_FROM_NAME: Invitely
       AWS_ACCESS_KEY_ID: invitely
       AWS_SECRET_ACCESS_KEY: invitely-secret
       AWS_DEFAULT_REGION: us-east-1
@@ -71,6 +74,7 @@ services:
       target: app
     command: php artisan queue:work --tries=3 --backoff=5
     environment:
+      APP_NAME: Invitely
       RUN_MIGRATIONS: "false"
       RUN_SEEDERS: "false"
       DB_CONNECTION: pgsql
@@ -79,7 +83,9 @@ services:
       DB_USERNAME: invitely
       DB_PASSWORD: secret
       REDIS_HOST: redis
+      CACHE_STORE: redis
       QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
     volumes:
       - ./:/var/www/html
       - vendor-data:/var/www/html/vendor

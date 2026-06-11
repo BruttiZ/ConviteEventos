@@ -24,14 +24,15 @@ VITE_SUPER_USER_PASSWORD = admin123456
 2. **Redeploy** e espere 5 min
 
 3. **Teste:**
-   ```
-   https://seu-site.vercel.app/login
-   
-   Email: admin@invitely.local
-   Senha: admin123456
-   
-   ✅ Deve entrar como "Admin Invitely"
-   ```
+
+    ```
+    https://seu-site.vercel.app/login
+
+    Email: admin@invitely.local
+    Senha: admin123456
+
+    ✅ Deve entrar como "Admin Invitely"
+    ```
 
 ### Opção 2: Com Supabase (COMPLETO - Super User + Cadastro Normal)
 
@@ -49,24 +50,26 @@ VITE_SITE_URL=https://seu-site.vercel.app
 2. **Redeploy** e espere 5 min
 
 3. **Teste Super User:**
-   ```
-   Email: admin@invitely.local
-   Senha: admin123456
-   ✅ Funciona sem Supabase
-   ```
+
+    ```
+    Email: admin@invitely.local
+    Senha: admin123456
+    ✅ Funciona sem Supabase
+    ```
 
 4. **Teste Cadastro Normal:**
-   ```
-   Clique "Cadastro"
-   Preencha dados
-   ✅ Deve funcionar com Supabase
-   ```
+    ```
+    Clique "Cadastro"
+    Preencha dados
+    ✅ Deve funcionar com Supabase
+    ```
 
 ---
 
 ## 🧪 Testes de Validação
 
 ### Teste 1: Super User Sem Supabase
+
 ```
 Pré-requisitos:
 - VITE_SUPER_USER_EMAIL configurado
@@ -87,6 +90,7 @@ Resultado Esperado:
 ```
 
 ### Teste 2: Super User Com Supabase
+
 ```
 Pré-requisitos:
 - Todos os VITE_* configurados
@@ -105,6 +109,7 @@ Resultado Esperado:
 ```
 
 ### Teste 3: Cadastro Normal (Supabase Necessário)
+
 ```
 Pré-requisitos:
 - VITE_SUPABASE_* configurados
@@ -126,6 +131,7 @@ Resultado Esperado:
 ```
 
 ### Teste 4: Mensagem de Erro Bem Formatada
+
 ```
 Pré-requisitos:
 - Supabase NÃO configurado
@@ -137,7 +143,7 @@ Passos:
 
 Resultado Esperado:
 ❌ Erro com mensagem clara:
-"Supabase não está configurado. Use o Super User (admin@invitely.local) 
+"Supabase não está configurado. Use o Super User (admin@invitely.local)
 para testar, ou configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."
 ```
 
@@ -146,16 +152,19 @@ para testar, ou configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."
 ## 📋 Verificação de Código
 
 ### AuthPage.tsx
+
 - ✅ Super user verificado ANTES de Supabase
 - ✅ Email trimado e comparado (admin@invitely.local)
 - ✅ Retorna sessão válida sem chamar Supabase
 - ✅ Mensagens de erro claras
 
 ### supabase.ts
+
 - ✅ isSupabaseConfigured() com debug logs
 - ✅ Erro claro mencionando Super User
 
 ### .env.local.example
+
 - ✅ VITE_SUPER_USER_EMAIL listado
 - ✅ VITE_SUPER_USER_PASSWORD listado
 - ✅ Comentários explicativos
@@ -183,12 +192,14 @@ Antes de fazer commit final:
 ## 🎯 Resultado Final
 
 ### Em Produção (Sem Supabase)
+
 ```
 ✅ Admin@invitely.local / admin123456 → Funciona
 ❌ Qualquer outro email → Erro com sugestão clara
 ```
 
 ### Em Produção (Com Supabase)
+
 ```
 ✅ Admin@invitely.local / admin123456 → Funciona (sem Supabase)
 ✅ Novo cadastro → Funciona (com Supabase)
@@ -196,6 +207,7 @@ Antes de fazer commit final:
 ```
 
 ### Em Desenvolvimento
+
 ```
 ✅ npm run dev funciona
 ✅ Super user funciona
